@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     # Google Drive (optional asset backup)
     google_drive_folder_id: Optional[str] = None
 
-    # CORS
-    cors_origins: List[str] = ["*"]
+    # CORS (comma-separated string, e.g. "*" or "https://a.com,https://b.com")
+    cors_origins: str = "*"
 
     class Config:
         env_file = ".env"
