@@ -52,11 +52,24 @@ def list_audit_reports(db: Session = Depends(get_db)):
     return db.query(models.AuditReport).order_by(models.AuditReport.created_at.desc()).limit(50).all()
 
 
-@router.post("/enquiries")
-def create_enquiry(payload: dict, db: Session = Depends(get_db)):
+try:
     from app.schemas import EnquiryIn
-    enquiry_data = EnquiryIn.model_validate(payload)
-    enquiry = models.Enquiry(**enquiry_data.model_dump())
+except ImportError:  # schemas.py may be stale in cached Docker layers
+    from pydantic import BaseModel, Field, EmailStr
+    from typing import Optional
+
+    class EnquiryIn(BaseModel):
+        name: str = Field(min_length=1, max_length=120)
+        email: EmailStr
+        phone: Optional[str] = Field(None, max_length=60)
+        company: Optional[str] = Field(None, max_length=255)
+        service: Optional[str] = Field(None, max_length=160)
+        message: str = Field(min_length=1)
+
+
+@router.post("/enquiries")
+def create_enquiry(payload: EnquiryIn, db: Session = Depends(get_db)):
+    enquiry = models.Enquiry(**payload.model_dump())
     db.add(enquiry)
     db.commit()
     db.refresh(enquiry)
