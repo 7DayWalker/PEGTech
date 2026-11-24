@@ -59,7 +59,14 @@ for _mod_name in ("public", "admin", "clients", "projects", "leads",
     except Exception as _e:
         print(f"router SKIPPED ({_mod_name}): {_e}", flush=True)
 
-from app.security_routes import router as auth_router
+# Auth router is also imported defensively so a failure there
+# cannot take down the whole service.
+try:
+    from app.security_routes import router as auth_router
+    print("router loaded: auth", flush=True)
+except Exception as _e:
+    print(f"router SKIPPED (auth): {_e}", flush=True)
+    auth_router = None
 
 app = FastAPI(title="PEGTech — Platform API", version="2.0.0",
               docs_url="/api/docs", openapi_url="/api/openapi.json")
@@ -96,7 +103,10 @@ def health():
     return {"ok": True, "service": "pegtech-api"}
 
 
-for r in (*_routers, auth_router):
+_all_routers = [*_routers]
+if auth_router is not None:
+    _all_routers.append(auth_router)
+for r in _all_routers:
     app.include_router(r)
 
 
