@@ -444,3 +444,6 @@ class Document(Base):
 
     client = relationship("Client")
     __table_args__ = (UniqueConstraint("slug", name="uq_document_slug"),)
+
+
+# ---------------------------------------------------------------------------\n# Enquiries\n# ---------------------------------------------------------------------------\nclass Enquiry(Base):\n    \"\"\"Public contact-form enquiries.\"\"\"\n    __tablename__ = \"enquiries\"\n\n    id: Mapped[int] = mapped_column(primary_key=True, index=True)\n    name: Mapped[str] = mapped_column(String(120), nullable=False)\n    email: Mapped[str] = mapped_column(String(200), index=True, nullable=False)\n    phone: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)\n    company: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)\n    service: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)\n    message: Mapped[str] = mapped_column(Text, nullable=False)\n    status: Mapped[str] = mapped_column(String(40), default=\"new\", index=True)\n    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

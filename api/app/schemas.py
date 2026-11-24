@@ -751,3 +751,27 @@ class AiContentGeneratorOut(BaseModel):
     content: str
     seo_keywords: List[str]
     meta_description: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------\n# Enquiries\n# ---------------------------------------------------------------------------\nclass EnquiryIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+    phone: Optional[str] = Field(None, max_length=60)
+    company: Optional[str] = Field(None, max_length=255)
+    service: Optional[str] = Field(None, max_length=160)
+    message: str = Field(min_length=1)
+
+
+class EnquiryOut(BaseModel):
+    id: int
+    name: str
+    email: str
+    phone: Optional[str] = None
+    company: Optional[str] = None
+    service: Optional[str] = None
+    message: str
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
