@@ -11,6 +11,9 @@ RUN npm run build
 FROM python:3.11-slim
 WORKDIR /app
 
+# Cache-buster: forces full rebuild to pick up schemas.py EnquiryIn fix
+ENV PEGTech_BUILD_REFRESH=3
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -27,8 +30,6 @@ COPY api/app ./app
 # (main.py resolves SITE_DIST to /site/dist)
 COPY --from=frontend /site/dist /site/dist
 
-# Cache-buster: forces full rebuild to pick up schemas.py EnquiryIn fix
-ENV PEGTech_BUILD_REFRESH=2
 ENV PORT=8080
 EXPOSE 8080
 
