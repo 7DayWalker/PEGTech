@@ -8,14 +8,8 @@ COPY site/ ./
 RUN npm run build
 
 # Stage 2: Python backend serving the built SPA
-FROM python:3.11-slim
+FROM python:3.11
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY api/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -23,7 +17,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Cache-buster: change this value to force Docker to re-copy api/app/
 # and pick up schemas.py with EnquiryIn
-ARG PEGTech_BUILD_REFRESH=3
+ARG PEGTech_BUILD_REFRESH=4
 ENV PEGTech_BUILD_REFRESH=$PEGTech_BUILD_REFRESH
 
 COPY api/app ./app
