@@ -46,7 +46,18 @@ print("boot: checking demo seed ...", flush=True)
 _seed_if_empty()
 print("boot: startup sequence complete", flush=True)
 
-from app.routers import public, admin, clients, projects, leads, campaigns, bookings, audit, careers, chat, enquiries
+# Import routers individually with try/except so a stale cached router
+# (e.g. schemas.py missing EnquiryIn) cannot crash the whole app.
+_routers = []
+for _mod_name in ("public", "admin", "clients", "projects", "leads",
+                  "campaigns", "bookings", "audit", "careers", "chat", "enquiries"):
+    try:
+        _mod = __import__(f"app.routers.{_mod_name}", fromlist=["router"])
+        _routers.append(_mod.router)
+        print(f"router loaded: {_mod_name}", flush=True)
+    except Exception as _e:
+        print(f"router SKIPPED ({_mod_name}): {_e}", flush=True)
+
 from app.security_routes import router as auth_router
 
 app = FastAPI(title="PEGTech — Platform API", version="2.0.0",
@@ -84,10 +95,7 @@ def health():
     return {"ok": True, "service": "pegtech-api"}
 
 
-for r in (public.router, admin.router, clients.router, projects.router,
-          leads.router, campaigns.router, bookings.router,
-          audit.router, careers.router, chat.router, enquiries.router,
-          auth_router):
+for r in (*_routers, auth_router):
     app.include_router(r)
 
 
