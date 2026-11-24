@@ -10,16 +10,11 @@ import { ChatWidget } from "../components/ChatWidget"
 export function Careers() {
   useTitle("Careers — PEGTech")
   const { show } = useToast()
-  const [roles, setRoles] = useState<any[]>([])
+  const [roles] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [form] = useState({
     role_id: "", name: "", email: "", phone: "", experience: "",
   })
-
-  async function loadRoles() {
-    const res = await api.get("/api/public/careers/roles")
-    if (res.ok) setRoles(await res.json())
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

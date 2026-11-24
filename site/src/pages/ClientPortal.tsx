@@ -5,14 +5,12 @@ import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useTitle } from "../lib/useTitle"
 import { api } from "../lib/api"
-import { useToast } from "../lib/Toast"
 import { ChatWidget } from "../components/ChatWidget"
-import { Folder, FileText, Clock, Bell, File } from "lucide-react"
+import { Folder, FileText, Clock, File } from "lucide-react"
 
 export function ClientPortal() {
   useTitle("Client Portal — PEGTech")
   const navigate = useNavigate()
-  const { show } = useToast()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 

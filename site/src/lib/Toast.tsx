@@ -1,7 +1,7 @@
 /**
  * Simple toast notification system.
  */
-import { createContext, useContext, useCallback, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useCallback, useState, ReactNode } from "react"
 
 type Toast = {
   id: string

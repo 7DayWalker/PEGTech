@@ -5,14 +5,12 @@ import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useTitle } from "../lib/useTitle"
 import { api } from "../lib/api"
-import { useToast } from "../lib/Toast"
 import { ChatWidget } from "../components/ChatWidget"
-import { Users, Folder, Mail, BarChart3, AlertTriangle, Clock } from "lucide-react"
+import { Users, Folder, Mail, BarChart3, AlertTriangle, LogOut } from "lucide-react"
 
 export function AdminPortal() {
   useTitle("Admin Portal — PEGTech")
   const navigate = useNavigate()
-  const { show } = useToast()
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -52,7 +50,7 @@ export function AdminPortal() {
               <Link to="/admin/projects" className="text-muted hover:text-accent transition-colors">Projects</Link>
               <Link to="/admin/leads" className="text-muted hover:text-accent transition-colors">Leads</Link>
               <Link to="/" className="text-muted hover:text-accent transition-colors flex items-center gap-2">
-                <LogOut2 size={16} /> Sign out
+                <LogOut size={16} /> Sign out
               </Link>
             </div>
           </div>
@@ -139,5 +137,3 @@ export function AdminPortal() {
     </div>
   )
 }
-
-import { LogOut2 } from "lucide-react"

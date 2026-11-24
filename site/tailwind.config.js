@@ -14,6 +14,7 @@ export default {
         text: "#1f2937",
         muted: "#6b7280",
         border: "#e5e7eb",
+        input: "#e5e7eb",
       },
       fontFamily: {
         sans: ["ui-sans-serif", "system-ui", "sans-serif"],

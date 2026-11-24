@@ -16,7 +16,7 @@
     @apply inline-flex items-center justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-muted shadow-sm hover:bg-muted/50 focus:outline-none transition-colors;
   }
   .input {
-    @apply block w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-400 focus:outline-none focus:ring-1 focus:ring-accent;
+    @apply block w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent;
   }
   .label {
     @apply block text-sm font-medium text-text mb-1;

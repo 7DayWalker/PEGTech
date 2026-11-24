@@ -2,7 +2,7 @@
  * API client for PEGTech frontend.
  * Uses fetch with automatic JWT from HttpOnly cookie (set by /api/auth/login).
  */
-const API_BASE = import.meta.env.VITE_API_URL || ""
+const API_BASE = (import.meta as any).env.VITE_API_URL || ""
 
 async function request(
   input: RequestInfo | URL,

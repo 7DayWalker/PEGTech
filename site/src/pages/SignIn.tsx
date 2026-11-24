@@ -7,7 +7,7 @@ import { useTitle } from "../lib/useTitle"
 import { api } from "../lib/api"
 import { useToast } from "../lib/Toast"
 import { ChatWidget } from "../components/ChatWidget"
-import { Mail, Lock, User, LogIn } from "lucide-react"
+import { Mail, Lock, LogIn } from "lucide-react"
 
 export function SignIn() {
   useTitle("Sign in — PEGTech")

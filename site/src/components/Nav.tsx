@@ -3,14 +3,12 @@
  */
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { Menu, X, User, LogOut, Mail, Phone } from "lucide-react"
+import { Menu, X, LogOut } from "lucide-react"
 import { api } from "../lib/api"
-import { useToast } from "../lib/Toast"
 
 export function Nav() {
   const [open, setOpen] = useState(false)
   const location = useLocation()
-  const { show } = useToast()
 
   async function handleLogout() {
     try {

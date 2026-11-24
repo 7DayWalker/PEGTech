@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom"
 import { useTitle } from "../lib/useTitle"
 import { api } from "../lib/api"
 import { useToast } from "../lib/Toast"
-import { Calendar, Phone, Mail, Clock } from "lucide-react"
 import { ChatWidget } from "../components/ChatWidget"
 
 const SLOTS = ["09:00", "10:30", "12:00", "13:30", "15:00", "16:30"]

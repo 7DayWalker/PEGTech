@@ -1,8 +1,8 @@
 /**
  * PEGTech frontend — main app with routing.
  */
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import { ToastProvider, useToast } from "./lib/Toast"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import { ToastProvider } from "./lib/Toast"
 import { Home } from "./pages/Home"
 import { Services } from "./pages/Services"
 import { Book } from "./pages/Book"
@@ -12,12 +12,6 @@ import { SignIn } from "./pages/SignIn"
 import { ClientPortal } from "./pages/ClientPortal"
 import { AdminPortal } from "./pages/AdminPortal"
 import { NotFound } from "./pages/NotFound"
-
-function RequireAuth({ children, role }: { children: JSX.Element, role?: "staff" | "client" }) {
-  const { show } = useToast()
-  // Auth state is managed via HttpOnly cookie; we check on page load via the page components
-  return children
-}
 
 function App() {
   return (

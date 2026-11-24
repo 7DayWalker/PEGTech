@@ -34,12 +34,13 @@ export function ChatWidget() {
         session_id: sessionId,
         history: messages,
       })
-      setMessages((prev) => [...prev, { role: "assistant", content: res.response }])
-      if (res.escalate) {
+      const data = await res.json()
+      setMessages((prev) => [...prev, { role: "assistant", content: data.response }])
+      if (data.escalate) {
         show("This has been flagged for human review. A team member will join shortly.", "info")
       }
     } catch {
-      show("AI assistant temporarily unavailable. Please try again later.", "error")
+      show("AI assistant temporarily unavailable. Please try again.", "error")
     } finally {
       setLoading(false)
     }

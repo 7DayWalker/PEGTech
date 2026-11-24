@@ -2,11 +2,12 @@
  * AI Revenue-Leak Audit calculator page.
  */
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { useTitle } from "../lib/useTitle"
 import { api } from "../lib/api"
 import { useToast } from "../lib/Toast"
 import { ChatWidget } from "../components/ChatWidget"
-import { AlertTriangle, DollarSign, Clock, BarChart3 } from "lucide-react"
+import { AlertTriangle } from "lucide-react"
 
 const LEAD_BANDS = ["Under 50", "50 – 150", "150 – 400", "400+"]
 const RESPONSE_TIMES = ["Under 5 mins", "Under 1 hour", "Same day", "Next day +"]
@@ -27,7 +28,7 @@ export function Audit() {
     email: "",
   })
 
-  async function runAudit(e: React.FormEvent) {
+  async function runAudit(e: { preventDefault: () => void }) {
     e.preventDefault()
     setLoading(true)
     try {
@@ -68,7 +69,7 @@ export function Audit() {
                 Answer 5 questions to estimate how much revenue your business is losing
                 to slow response times, poor pipeline, and ad waste.
               </p>
-              <form onSubmit={runAudit} className="space-y-5">
+              <form onSubmit={(e) => runAudit(e)} className="space-y-5">
                 <div className="space-y-2">
                   <label className="label">Your industry</label>
                   <input
@@ -135,8 +136,6 @@ export function Audit() {
 
         <ChatWidget />
       </div>
-    </div>
   )
+  }
 }
-
-import { Link } from "react-router-dom"

@@ -2,7 +2,6 @@
  * Home page — landing page with hero, services, and CTA.
  */
 import { useTitle } from "../lib/useTitle"
-import { useReveal } from "../lib/useReveal"
 import { ChatWidget } from "../components/ChatWidget"
 import { ThemeToggle } from "../components/ThemeToggle"
 import { SERVICES } from "../lib/content"
