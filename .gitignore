@@ -1,34 +1,12 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
+__pycache__
+*.pyc
 .env
-.env.*.local
-.venv/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Build
-dist/
-build/
-*.egg-info/
-.eggs/
-
-# Logs
-*.log
-
-# SQLite
 *.db
 *.sqlite
+/venv
+/.venv
+.env.example
+node_modules
+site/dist
+site/.vite
+.DS_Store
