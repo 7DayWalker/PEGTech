@@ -1,182 +1,172 @@
-/** Home page — landing page with hero, services, features, and CTA. */
+/** Home page — marketing landing page with hero, services, work, testimonials, CTA. */
 import { Link } from "react-router-dom";
 import { useTitle } from "../lib/useTitle";
-import { ChatWidget } from "../components/ChatWidget";
-import { ThemeToggle } from "../components/ThemeToggle";
-import { Card, CardTitle, CardDescription, CardContent } from "../components/Card";
-import { Badge } from "../components/Badge";
+import { Card } from "../components/Card";
 import { Section, Container, SectionHeader } from "../components/Section";
-import { SERVICES } from "../lib/content";
-import { Footer } from "../components/Footer";
+import { Badge } from "../components/Badge";
 import {
   Globe,
+  Smartphone,
   Cpu,
   Megaphone,
   Palette,
-  Headset,
+  Settings,
+  ArrowRight,
   Sparkles,
   BarChart3,
   ShieldCheck,
+  Clock,
 } from "lucide-react";
 
 const SERVICE_ICONS: Record<string, React.ElementType> = {
   "Web Development": Globe,
+  "Mobile Apps": Smartphone,
   "AI Solutions": Cpu,
   "Digital Marketing": Megaphone,
   "Brand & Design": Palette,
-  "Tech Consulting": Headset,
+  "Tech Consulting": Settings,
 };
 
+const WORK_ITEMS = [
+  {
+    title: "Lagos Retail Chain",
+    category: "E-commerce Website",
+    description: "Full-stack online store with inventory management and WhatsApp ordering.",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?w=800&q=80",
+    result: "40% increase in online sales",
+  },
+  {
+    title: "Abuja Logistics Firm",
+    category: "Fleet Management App",
+    description: "Mobile app for real-time vehicle tracking and driver dispatch.",
+    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80",
+    result: "25% reduction in fuel costs",
+  },
+  {
+    title: "Nigerian Marketing Agency",
+    category: "AI Lead Scoring",
+    description: "AI system that scores and routes inbound leads to sales reps.",
+    image: "https://images.unsplash.com/photo-1460925895917-af663827772d?w=800&q=80",
+    result: "3x faster lead response",
+  },
+];
+
+const STATS = [
+  { label: "Projects Delivered", value: "50+" },
+  { label: "Client Retention", value: "94%" },
+  { label: "Avg. Response Time", value: "< 2 hrs" },
+  { label: "Years Experience", value: "8+" },
+];
+
+const FEATURES = [
+  {
+    title: "AI Customer Service",
+    desc: "24/7 AI CSR that handles first contact, qualifies leads, and books appointments.",
+    icon: Sparkles,
+  },
+  {
+    title: "Revenue-Leak Audit",
+    desc: "AI analysis that finds where your business loses money — slow responses, dead leads, ad waste.",
+    icon: BarChart3,
+  },
+  {
+    title: "WhatsApp-First",
+    desc: "Meta-verified WhatsApp integration — reach customers where they already are.",
+    icon: Clock,
+  },
+  {
+    title: "Secure & Compliant",
+    desc: "CAN-SPAM compliant, data privacy, and full unsubscribe handling built-in.",
+    icon: ShieldCheck,
+  },
+];
+
 export function Home() {
-  useTitle("PEGTech — Build Smarter. Grow Faster.");
-
-  const stats = [
-    { label: "Projects Delivered", value: "50+" },
-    { label: "Client Retention", value: "94%" },
-    { label: "Avg. Response Time", value: "< 2 hrs" },
-    { label: "Years Experience", value: "8+" },
-  ];
-
-  const features = [
-    {
-      title: "AI Customer Service",
-      desc: "24/7 AI CSR that handles first contact, qualifies leads, and books appointments before a human joins.",
-      icon: Sparkles,
-    },
-    {
-      title: "Revenue-Leak Audit",
-      desc: "AI-powered analysis that finds where your business is losing money — slow responses, dead leads, ad waste.",
-      icon: BarChart3,
-    },
-    {
-      title: "Secure & Compliant",
-      desc: "Nigeria-based, Meta-verified WhatsApp, CAN-SPAM compliant, with full data privacy and unsubscribe handling.",
-      icon: ShieldCheck,
-    },
-  ];
+  useTitle("PEGTech — Web Apps, AI & Digital Services for Modern Businesses");
 
   return (
-    <div className="min-h-screen flex flex-col bg-dark-900 text-slate-100">
-      <nav className="sticky top-0 z-50 border-b border-border/50 bg-dark-900/80 backdrop-blur-md">
-        <Container>
-          <div className="flex items-center justify-between h-16">
-            <Link
-              to="/"
-              className="flex items-center gap-2 font-bold text-xl tracking-tight"
-            >
-              <span className="text-accent">P</span>EG<span className="text-white">Tech</span>
-            </Link>
-
-            <div className="hidden md:flex items-center gap-6 text-sm font-medium">
-              <Link
-                to="/services"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                Services
-              </Link>
-              <Link
-                to="/book"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                Book a Call
-              </Link>
-              <Link
-                to="/audit"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                AI Audit
-              </Link>
-              <Link
-                to="/careers"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                Careers
-              </Link>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <Link to="/book" className="btn variant-primary size-sm">
-                Book a Call
-              </Link>
-            </div>
-          </div>
-        </Container>
-      </nav>
-
-      <main className="flex-1 relative overflow-hidden">
+    <div className="relative overflow-hidden">
         {/* Hero */}
-        <section className="relative pt-20 pb-32 lg:pt-32 lg:pb-40 overflow-hidden">
+        <section className="relative pt-24 pb-36 lg:pt-32 lg:pb-48 overflow-hidden">
           <div className="absolute inset-0 grid-pattern pointer-events-none"></div>
           <Container>
             <SectionHeader>
-              <Badge className="mb-4 inline-block">Multi-niche • Web • App • AI Services</Badge>
-              <h1 className="text-balance">
-                Build smarter. <span className="text-accent">Grow faster.</span>
+              <Badge className="mb-4 inline-block reveal-up" style={{ animationDelay: "0.1s" }}>
+                Nigeria-based • WhatsApp-first • Meta-verified
+              </Badge>
+              <h1 className="text-balance reveal-up" style={{ animationDelay: "0.2s" }}>
+                We build digital products that help{" "}
+                <span className="text-blue-500">local businesses grow.</span>
               </h1>
-              <p className="mt-6 text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                Web applications, AI solutions, and digital services for modern businesses.
-                AI-powered customer service, lead scoring, and revenue-leak recovery — all
-                in one agency built for growth.
+              <p className="mt-6 text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed reveal-up" style={{ animationDelay: "0.3s" }}>
+                Web applications, mobile apps, AI solutions, and digital marketing — built
+                for businesses in Nigeria and around the world. From first line of code to
+                first paying customer.
               </p>
             </SectionHeader>
 
-            <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="mt-16 flex flex-col sm:flex-row gap-4 justify-center reveal-up" style={{ animationDelay: "0.4s" }}>
               <Link
-                to="/book"
-                className="btn variant-primary size-lg w-full sm:w-auto"
+                to="/services"
+                className="btn-primary text-base px-8 py-4 w-full sm:w-auto"
               >
-                Book a Consultation
+                View Our Services
               </Link>
               <Link
-                to="/audit"
-                className="btn variant-outline size-lg w-full sm:w-auto"
+                to="/book"
+                className="btn-outline text-base px-8 py-4 w-full sm:w-auto"
               >
-                Run Revenue-Leak Audit
+                Book a Consultation
               </Link>
             </div>
 
             {/* Trust stats */}
-            <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 pt-8 border-t border-border/50">
-              {stats.map((s) => (
-                <div key={s.label} className="text-center animate-[fadeIn_0.6s_ease-out_forwards]">
-                  <div className="text-2xl font-bold text-accent">{s.value}</div>
-                  <div className="mt-1 text-sm text-slate-500">{s.label}</div>
+            <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 pt-12 border-t border-border/50">
+              {STATS.map((s, i) => (
+                <div key={s.label} className="text-center reveal-up" style={{ animationDelay: `${0.5 + i * 0.1}s` }}>
+                  <div className="text-3xl font-bold text-blue-500">{s.value}</div>
+                  <div className="mt-2 text-sm text-slate-500">{s.label}</div>
                 </div>
               ))}
             </div>
           </Container>
         </section>
 
-        {/* Services */}
+        {/* Services Preview */}
         <section className="py-24 border-y border-border/50">
           <Container>
             <SectionHeader>
-              <h2 className="text-balance">Our Services</h2>
+              <Badge className="mb-4 inline-block">Our Expertise</Badge>
+              <h2 className="text-balance">Everything you need to grow online</h2>
               <p className="mt-4 text-lg text-slate-400">
-                Everything you need to grow your business online — from first line of code
-                to first paying customer.
+                Full-stack digital agency services — web, mobile, AI, marketing, design,
+                and consulting. Built for modern businesses.
               </p>
             </SectionHeader>
 
-            <div className="grid md:grid-cols-3 gap-6">
-              {SERVICES.map((s) => {
-                const Icon = SERVICE_ICONS[s.name] || Sparkles;
+            <div className="mt-16 grid md:grid-cols-3 gap-6">
+              {[
+                { name: "Web Development", desc: "Custom websites and web applications built for performance and scale.", icon: Globe },
+                { name: "Mobile Apps", desc: "iOS and Android apps that engage your customers and streamline operations.", icon: Smartphone },
+                { name: "AI Solutions", desc: "AI agents, automation, and machine learning tailored to your business.", icon: Cpu },
+                { name: "Digital Marketing", desc: "SEO, content strategy, and campaign management that drives growth.", icon: Megaphone },
+                { name: "Brand & Design", desc: "Visual identity and UI/UX design that resonates with your audience.", icon: Palette },
+                { name: "Tech Consulting", desc: "Technology strategy, architecture review, and fractional CTO support.", icon: Settings },
+              ].map((s, i) => {
+                const Icon = SERVICE_ICONS[s.name] || Settings;
                 return (
-                  <Card key={s.name} hover padding="lg" className="group">
-                    <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-5 group-hover:scale-110 transition-transform duration-300">
-                      <Icon size={24} />
+                  <Card key={s.name} hover padding="lg" className="group reveal-up" style={{ animationDelay: `${0.5 + i * 0.1}s` }}>
+                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-6 group-hover:bg-blue-500/20 transition-colors duration-300">
+                      <Icon size={28} />
                     </div>
-                    <CardTitle>{s.name}</CardTitle>
-                    <CardDescription>{s.description}</CardDescription>
-                    <CardContent className="mt-6">
-                      <Link
-                        to="/book"
-                        className="text-accent text-sm font-medium hover:underline flex items-center gap-1"
-                      >
-                        Start project <span className="text-xs">→</span>
-                      </Link>
-                    </CardContent>
+                    <h3 className="text-xl font-bold text-slate-100 mb-3">{s.name}</h3>
+                    <p className="text-sm text-slate-400 mb-6">{s.desc}</p>
+                    <Link
+                      to="/services"
+                      className="text-blue-400 text-sm font-medium hover:underline flex items-center gap-1 group-hover:text-blue-300 transition-colors"
+                    >
+                      Learn more <ArrowRight size={16} />
+                    </Link>
                   </Card>
                 );
               })}
@@ -184,7 +174,7 @@ export function Home() {
           </Container>
         </section>
 
-        {/* AI Features */}
+        {/* Features */}
         <Section inverse py={32}>
           <Container>
             <SectionHeader className="text-left">
@@ -196,24 +186,71 @@ export function Home() {
               </p>
             </SectionHeader>
 
-            <div className="grid md:grid-cols-3 gap-6">
-              {features.map((f) => (
-                <Card key={f.title} hover padding="lg">
-                  <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 mb-5">
+            <div className="grid md:grid-cols-4 gap-6">
+              {FEATURES.map((f, i) => (
+                <Card key={f.title} padding="lg" className="reveal-up" style={{ animationDelay: `${0.2 + i * 0.1}s` }}>
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-5">
                     <f.icon size={24} />
                   </div>
-                  <CardTitle>{f.title}</CardTitle>
-                  <CardDescription>{f.desc}</CardDescription>
+                  <h3 className="text-lg font-bold text-slate-100 mb-3">{f.title}</h3>
+                  <p className="text-sm text-slate-400">{f.desc}</p>
                 </Card>
               ))}
             </div>
           </Container>
         </Section>
 
+        {/* Work / Case Studies Preview */}
+        <section className="py-24">
+          <Container>
+            <SectionHeader>
+              <Badge className="mb-4 inline-block">Proven Results</Badge>
+              <h2 className="text-balance">Work we're proud of</h2>
+              <p className="mt-4 text-lg text-slate-400">
+                Real projects for real businesses across Nigeria and internationally.
+              </p>
+            </SectionHeader>
+
+            <div className="mt-16 grid md:grid-cols-3 gap-6">
+              {WORK_ITEMS.map((work, i) => (
+                <Card key={work.title} hover padding="none" className="reveal-up overflow-hidden" style={{ animationDelay: `${0.3 + i * 0.1}s` }}>
+                  <div className="h-48 bg-slate-800 overflow-hidden">
+                    <img
+                      src={work.image}
+                      alt={work.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <Badge className="mb-3 inline-block blue">{work.category}</Badge>
+                    <h3 className="text-xl font-bold text-slate-100 mb-2">{work.title}</h3>
+                    <p className="text-sm text-slate-400 mb-6">{work.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-400 font-semibold text-sm">{work.result}</span>
+                      <Link
+                        to="/work"
+                        className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
+                      >
+                        View case study <ArrowRight size={16} />
+                      </Link>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            <div className="mt-12 text-center">
+              <Link to="/work" className="btn-outline">
+                See All Projects
+              </Link>
+            </div>
+          </Container>
+        </section>
+
         {/* CTA */}
         <section className="py-24">
           <Container>
-            <Card className="rounded-3xl border-accent/30 bg-gradient-to-br from-dark-800 to-dark-900 p-12 text-center shadow-2xl shadow-accent/10">
+            <Card className="rounded-3xl border-blue-500/30 bg-gradient-to-br from-dark-800 to-dark-900 p-12 md:p-20 text-center shadow-2xl shadow-blue-500/10">
               <h2 className="text-3xl md:text-4xl font-bold text-slate-100 mb-4">
                 Ready to grow your business?
               </h2>
@@ -223,17 +260,13 @@ export function Home() {
               </p>
               <Link
                 to="/book"
-                className="btn variant-primary size-lg w-full sm:w-auto"
+                className="btn-primary text-base px-8 py-4 w-full sm:w-auto"
               >
                 Book Your Discovery Call
               </Link>
             </Card>
           </Container>
         </section>
-      </main>
-
-      <Footer />
-      <ChatWidget />
     </div>
   );
 }

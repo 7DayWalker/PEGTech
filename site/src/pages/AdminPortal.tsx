@@ -6,7 +6,7 @@ import { api } from "../lib/api";
 import { Card } from "../components/Card";
 import { Container } from "../components/Section";
 import { Badge } from "../components/Badge";
-import { Users, Folder, Mail, BarChart3, AlertTriangle, LogOut } from "lucide-react";
+import { Users, Folder, Mail, BarChart3, AlertTriangle } from "lucide-react";
 
 export function AdminPortal() {
   useTitle("Admin Portal — PEGTech");
@@ -27,7 +27,7 @@ export function AdminPortal() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-dark-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -38,60 +38,17 @@ export function AdminPortal() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-dark-900 text-slate-100">
-      <nav className="sticky top-0 z-50 border-b border-border/50 bg-dark-900/80 backdrop-blur-md">
-        <Container>
-          <div className="flex items-center justify-between h-16">
-            <Link
-              to="/"
-              className="flex items-center gap-2 font-bold text-xl tracking-tight"
-            >
-              <span className="text-accent">P</span>EG<span className="text-white">Tech</span>
-            </Link>
-            <div className="ml-auto flex items-center gap-3 text-sm">
-              <Link
-                to="/admin/clients"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                Clients
-              </Link>
-              <Link
-                to="/admin/projects"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                Projects
-              </Link>
-              <Link
-                to="/admin/leads"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                Leads
-              </Link>
-              <button
-                onClick={() => {
-                  api.post("/api/auth/logout").catch(() => {});
-                  window.location.href = "/";
-                }}
-                className="text-slate-400 hover:text-white transition-colors flex items-center gap-2"
-              >
-                <LogOut size={16} /> Sign out
-              </button>
-            </div>
-          </div>
-        </Container>
-      </nav>
-
-      <main className="flex-1 py-8 px-4">
+    <div className="flex-1 py-8 px-4">
         <Container>
           <div className="flex justify-between items-start mb-8">
             <div>
-              <Badge className="mb-3 inline-block">Staff Dashboard</Badge>
+              <Badge className="mb-3 inline-block blue">Staff Dashboard</Badge>
               <h1 className="text-2xl font-bold text-slate-100 mb-1">
                 Admin Portal
               </h1>
               <p className="text-slate-400">Manage your agency operations</p>
             </div>
-            <Link to="/admin/clients" className="btn variant-primary size-sm">
+            <Link to="/admin/clients" className="btn-primary text-xs px-3 py-1.5">
               + New Client
             </Link>
           </div>
@@ -150,7 +107,7 @@ export function AdminPortal() {
             <div className="grid md:grid-cols-4 gap-4">
               <Link
                 to="/admin/clients"
-                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-slate-600/50 transition-colors text-center"
+                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-blue-500/50 transition-colors text-center"
               >
                 <Users size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-blue-400 transition-colors" />
                 <p className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
@@ -159,7 +116,7 @@ export function AdminPortal() {
               </Link>
               <Link
                 to="/admin/projects"
-                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-slate-600/50 transition-colors text-center"
+                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-blue-500/50 transition-colors text-center"
               >
                 <Folder size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-green-400 transition-colors" />
                 <p className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
@@ -168,7 +125,7 @@ export function AdminPortal() {
               </Link>
               <Link
                 to="/admin/leads"
-                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-slate-600/50 transition-colors text-center"
+                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-blue-500/50 transition-colors text-center"
               >
                 <Mail size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-purple-400 transition-colors" />
                 <p className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
@@ -177,9 +134,9 @@ export function AdminPortal() {
               </Link>
               <Link
                 to="/audit"
-                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-slate-600/50 transition-colors text-center"
+                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-blue-500/50 transition-colors text-center"
               >
-                <BarChart3 size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-accent transition-colors" />
+                <BarChart3 size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-blue-400 transition-colors" />
                 <p className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
                   Run AI Audit
                 </p>
@@ -189,12 +146,12 @@ export function AdminPortal() {
 
           {/* Escalations alert */}
           {stats.pending_escalations > 0 && (
-            <Card padding="md" className="border-l-4 border-orange-500 bg-orange-500/10">
+            <Card padding="md" className="border-l-4 border-blue-500 bg-blue-500/10">
               <div className="flex items-start gap-3">
-                <AlertTriangle size={20} className="text-orange-500 mt-0.5" />
+                <AlertTriangle size={20} className="text-blue-500 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-orange-300">Pending Escalations</h4>
-                  <p className="text-sm text-orange-200">
+                  <h4 className="font-bold text-blue-300">Pending Escalations</h4>
+                  <p className="text-sm text-blue-200">
                     You have {stats.pending_escalations} escalation(s) waiting for attention.
                   </p>
                 </div>
@@ -202,11 +159,6 @@ export function AdminPortal() {
             </Card>
           )}
         </Container>
-      </main>
-
-      <Footer />
     </div>
   );
 }
-
-import { Footer } from "../components/Footer";

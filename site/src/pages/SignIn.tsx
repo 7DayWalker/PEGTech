@@ -12,8 +12,12 @@ export function SignIn() {
   useTitle("Sign in — PEGTech");
   const navigate = useNavigate();
   const { show } = useToast();
-  const [form] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
+
+  function update<K extends keyof typeof form>(key: K, value: string) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,11 +47,11 @@ export function SignIn() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-900 px-4">
-      <Card padding="none" className="w-full max-w-md shadow-2xl shadow-accent/5">
+      <Card padding="none" className="w-full max-w-md shadow-2xl shadow-blue-500/5">
         <div className="p-8">
           <div className="text-center mb-8">
             <div className="flex items-center gap-2 font-bold text-xl tracking-tight justify-center text-slate-100">
-              <span className="text-accent">P</span>EG<span className="text-white">Tech</span>
+              <span className="text-blue-500">P</span>EG<span className="text-white">Tech</span>
             </div>
             <p className="text-slate-400 text-sm mt-2">
               Sign in to your account
@@ -64,9 +68,7 @@ export function SignIn() {
                 type="email"
                 className="input-base"
                 value={form.email}
-                onChange={(e) => {
-                  form.email = e.target.value;
-                }}
+                onChange={(e) => update("email", e.target.value)}
                 placeholder="you@company.com"
                 required
               />
@@ -80,9 +82,7 @@ export function SignIn() {
                 type="password"
                 className="input-base"
                 value={form.password}
-                onChange={(e) => {
-                  form.password = e.target.value;
-                }}
+                onChange={(e) => update("password", e.target.value)}
                 placeholder="••••••••"
                 required
               />
@@ -103,7 +103,7 @@ export function SignIn() {
             New to PEGTech?{" "}
             <Link
               to="/signup"
-              className="text-accent hover:underline font-medium"
+              className="text-blue-400 hover:underline font-medium"
             >
               Request access
             </Link>

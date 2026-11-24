@@ -1,140 +1,161 @@
-/** Services page. */
+/** Services page — overview with links to individual service pages. */
 import { Link } from "react-router-dom";
 import { useTitle } from "../lib/useTitle";
-import { Card, CardTitle, CardDescription, CardContent } from "../components/Card";
+import { Card } from "../components/Card";
 import { Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
-import { SERVICES } from "../lib/content";
 import {
+  ArrowRight,
   Globe,
+  Smartphone,
   Cpu,
   Megaphone,
-  Palette as PaletteIcon,
-  ArrowRight,
-  Layers,
-  Zap,
+  Palette,
   Settings,
 } from "lucide-react";
 
-const SERVICE_ICONS: Record<string, React.ElementType> = {
-  "Web Development": Globe,
-  "AI Solutions": Cpu,
-  "Digital Marketing": Megaphone,
-  "Brand & Design": PaletteIcon,
-  "Tech Consulting": Settings,
-};
+const SERVICES = [
+  {
+    id: "web",
+    name: "Web Development",
+    desc: "Custom websites and web applications built for performance, security, and scale. From landing pages to full web platforms.",
+    icon: "Globe",
+    features: ["Responsive design", "SEO-friendly architecture", "Fast loading speeds", "CMS integration"],
+    startingAt: "$2,500",
+  },
+  {
+    id: "app",
+    name: "Mobile Apps",
+    desc: "iOS and Android apps that engage your customers and streamline your business operations.",
+    icon: "Smartphone",
+    features: ["Cross-platform", "Push notifications", "Offline mode", "App store deployment"],
+    startingAt: "$5,000",
+  },
+  {
+    id: "ai",
+    name: "AI Solutions",
+    desc: "AI agents, automation, and machine learning tailored to your business — from customer service to lead scoring.",
+    icon: "Cpu",
+    features: ["AI chatbots", "Lead scoring", "Call summarization", "Content generation"],
+    startingAt: "$3,000",
+  },
+  {
+    id: "marketing",
+    name: "Digital Marketing",
+    desc: "SEO, content strategy, and campaign management that drives growth and measurable ROI.",
+    icon: "Megaphone",
+    features: ["SEO audits", "Content strategy", "Paid campaigns", "Analytics & reporting"],
+    startingAt: "$1,500",
+  },
+  {
+    id: "design",
+    name: "Brand & Design",
+    desc: "Visual identity and UI/UX design that resonates with your audience and builds trust.",
+    icon: "Palette",
+    features: ["Logo design", "Brand guidelines", "UI/UX design", "Design systems"],
+    startingAt: "$1,200",
+  },
+  {
+    id: "consulting",
+    name: "Tech Consulting",
+    desc: "Technology strategy, architecture review, and fractional CTO support for growing businesses.",
+    icon: "Settings",
+    features: ["Tech audits", "Architecture review", "CTO support", "Digital strategy"],
+    startingAt: "$200/hr",
+  },
+];
 
-const SERVICE_FEATURES: Record<string, string[]> = {
-  "Web Development": [
-    "Custom websites and web applications",
-    "Performance and scale optimization",
-    "Responsive design for all devices",
-    "SEO-friendly architecture",
-  ],
-  "AI Solutions": [
-    "AI agents and automation",
-    "Machine learning models",
-    "Natural language processing",
-    "Computer vision",
-  ],
-  "Digital Marketing": [
-    "SEO and content strategy",
-    "Campaign management",
-    "Social media marketing",
-    "Conversion optimization",
-  ],
-  "Brand & Design": [
-    "Visual identity design",
-    "UI/UX design",
-    "Brand guidelines",
-    "Design systems",
-  ],
-  "Tech Consulting": [
-    "Technology strategy",
-    "Architecture review",
-    "Fractional CTO support",
-    "Technical due diligence",
-  ],
+const ICON_MAP: Record<string, React.ElementType> = {
+  Globe: Globe as React.ElementType,
+  Smartphone: Smartphone as React.ElementType,
+  Cpu: Cpu as React.ElementType,
+  Megaphone: Megaphone as React.ElementType,
+  Palette: Palette as React.ElementType,
+  Settings: Settings as React.ElementType,
 };
 
 export function Services() {
   useTitle("Services — PEGTech");
 
   return (
-    <div className="min-h-screen flex flex-col bg-dark-900 text-slate-100">
-      <nav className="sticky top-0 z-50 border-b border-border/50 bg-dark-900/80 backdrop-blur-md">
-        <Container>
-          <div className="flex items-center justify-between h-16">
-            <Link
-              to="/"
-              className="flex items-center gap-2 font-bold text-xl tracking-tight"
-            >
-              <span className="text-accent">P</span>EG<span className="text-white">Tech</span>
-            </Link>
-
-            <div className="ml-auto flex items-center gap-3">
-              <Link
-                to="/"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                ← Back to Home
-              </Link>
-              <Link to="/book" className="btn variant-primary size-sm">
-                Book a Call
-              </Link>
-            </div>
-          </div>
-        </Container>
-      </nav>
-
-      <main className="flex-1">
+    <div className="flex-1">
         <section className="py-24">
           <Container>
             <SectionHeader>
-              <Badge className="mb-4 inline-block">Our Expertise</Badge>
+              <Badge className="mb-4 inline-block blue">Our Services</Badge>
               <h1 className="text-balance">Services</h1>
               <p className="mt-4 text-lg text-slate-400 max-w-2xl">
-                Full-stack digital agency services — web, app, AI, marketing, design,
-                and consulting. Built for modern businesses.
+                Full-stack digital agency services — web, mobile, AI, marketing, design,
+                and consulting. Built for businesses in Nigeria and worldwide.
               </p>
             </SectionHeader>
 
             <div className="mt-16 grid md:grid-cols-3 gap-6">
               {SERVICES.map((s) => {
-                const Icon = SERVICE_ICONS[s.name] || Layers;
-                const features = SERVICE_FEATURES[s.name] || [];
+                const Icon = ICON_MAP[s.icon];
                 return (
-                  <Card key={s.name} hover padding="lg" className="group">
-                    <div className="w-14 h-14 rounded-2xl bg-accent/5 flex items-center justify-center text-accent mb-6 group-hover:bg-accent/10 transition-colors duration-300">
+                  <Card key={s.id} hover padding="lg" className="group">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-6 group-hover:bg-blue-500/20 transition-colors duration-300">
                       <Icon size={28} />
                     </div>
-                    <CardTitle>{s.name}</CardTitle>
-                    <CardDescription>{s.description}</CardDescription>
-                    <CardContent className="mt-6 space-y-3">
-                      {features.map((f) => (
-                        <div key={f} className="flex items-center gap-2">
-                          <Zap size={14} className="text-accent/50" />
-                          <span className="text-sm text-slate-400">{f}</span>
+                    <h3 className="text-xl font-bold text-slate-100 mb-3 group-hover:text-blue-400 transition-colors">
+                      {s.name}
+                    </h3>
+                    <p className="text-sm text-slate-400 mb-6">{s.desc}</p>
+                    <div className="space-y-3 mb-6">
+                      {s.features.map((f) => (
+                        <div key={f} className="flex items-center gap-2 text-sm text-slate-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500/20 text-blue-400"></span>
+                          {f}
                         </div>
                       ))}
-                      <Link
-                        to="/book"
-                        className="mt-4 inline-flex items-center gap-1 text-accent text-sm font-medium hover:underline transition-colors"
-                      >
-                        Book this service <ArrowRight size={16} />
-                      </Link>
-                    </CardContent>
+                    </div>
+                    <div className="border-t border-border/50 pt-4">
+                      <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                        Starting at {s.startingAt}
+                      </span>
+                    </div>
+                    <Link
+                      to={`/services#${s.id}`}
+                      className="mt-4 inline-flex items-center gap-1 text-blue-400 text-sm font-medium hover:underline group-hover:text-blue-300 transition-colors"
+                    >
+                      Explore <ArrowRight size={16} />
+                    </Link>
                   </Card>
                 );
               })}
             </div>
           </Container>
         </section>
-      </main>
 
-      <Footer />
+        {/* CTA */}
+        <section className="py-24">
+          <Container>
+            <Card className="rounded-3xl border-blue-500/30 bg-gradient-to-br from-dark-800 to-dark-900 p-12 text-center shadow-2xl shadow-blue-500/10">
+              <h2 className="text-3xl font-bold text-slate-100 mb-4">
+                Ready to start your project?
+              </h2>
+              <p className="text-slate-400 mb-8 max-w-lg mx-auto">
+                Tell us about your business and we'll recommend the right solution for
+                your goals and budget.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  to="/book"
+                  className="btn-primary text-base px-8 py-4 w-full sm:w-auto"
+                >
+                  Book a Consultation
+                </Link>
+                <Link
+                  to="/contact"
+                  className="btn-outline text-base px-8 py-4 w-full sm:w-auto"
+                >
+                  Send a Message
+                </Link>
+              </div>
+            </Card>
+          </Container>
+        </section>
     </div>
   );
 }
-
-import { Footer } from "../components/Footer";

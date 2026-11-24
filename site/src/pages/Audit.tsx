@@ -9,7 +9,7 @@ import { Input, Select } from "../components/Input";
 import { Card } from "../components/Card";
 import { Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
-import { AlertTriangle, ArrowRight, TrendingUp, DollarSign } from "lucide-react";
+import { ArrowRight, TrendingUp, DollarSign } from "lucide-react";
 
 const LEAD_BANDS = ["Under 50", "50 – 150", "150 – 400", "400+"];
 const RESPONSE_TIMES = ["Under 5 mins", "Under 1 hour", "Same day", "Next day +"];
@@ -21,7 +21,7 @@ export function Audit() {
   const { show } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const [form] = useState({
+  const [form, setForm] = useState({
     industry: "Marketing Agency",
     leads: LEAD_BANDS[1],
     response: RESPONSE_TIMES[2],
@@ -29,6 +29,10 @@ export function Audit() {
     deal: DEAL_BANDS[2],
     email: "",
   });
+
+  function update<K extends keyof typeof form>(key: K, value: string) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
 
   async function runAudit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,29 +51,7 @@ export function Audit() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-dark-900 text-slate-100">
-      <nav className="sticky top-0 z-50 border-b border-border/50 bg-dark-900/80 backdrop-blur-md">
-        <Container>
-          <div className="flex items-center justify-between h-16">
-            <Link
-              to="/"
-              className="flex items-center gap-2 font-bold text-xl tracking-tight"
-            >
-              <span className="text-accent">P</span>EG<span className="text-white">Tech</span>
-            </Link>
-            <div className="ml-auto flex items-center gap-3">
-              <Link
-                to="/"
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                ← Back to Home
-              </Link>
-            </div>
-          </div>
-        </Container>
-      </nav>
-
-      <main className="flex-1 py-16">
+    <div className="flex-1 py-16">
         <Container>
           {result ? (
             <section className="max-w-3xl mx-auto">
@@ -88,11 +70,7 @@ export function Audit() {
               <div className="grid md:grid-cols-3 gap-6 mb-8">
                 {[result.annual_leak_usd, result.monthly_leak_usd, result.risk_pct].map(
                   (val: any, i: number) => {
-                    const labels = [
-                      "Annual Leak",
-                      "Monthly Leak",
-                      "Risk Level",
-                    ];
+                    const labels = ["Annual Leak", "Monthly Leak", "Risk Level"];
                     const formats = [
                       `$${(val / 1000).toFixed(0)}K`,
                       `$${(val / 1000).toFixed(0)}K`,
@@ -113,40 +91,17 @@ export function Audit() {
               <div className="space-y-6">
                 <div className="Card p-6 rounded-2xl border border-border bg-dark-800/50">
                   <div className="flex items-start gap-3">
-                    <DollarSign size={24} className="text-accent mt-0.5" />
+                    <DollarSign size={24} className="text-blue-400 mt-0.5" />
                     <div>
                       <h3 className="font-bold text-slate-100">Estimated Annual Revenue Leak</h3>
                       <p className="text-sm text-slate-400">
                         Based on lead response times, pipeline health, and deal size,
                         your business could be losing approximately{" "}
-                        <span className="text-accent font-bold">
+                        <span className="text-blue-400 font-bold">
                           ${(result.annual_leak_usd / 1000).toFixed(0)}K per year
                         </span>
                         .
                       </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="Card p-6 rounded-2xl border border-border bg-dark-800/50">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle size={24} className="text-amber-500 mt-0.5" />
-                    <div>
-                      <h3 className="font-bold text-slate-100">Primary Risk Areas</h3>
-                      <ul className="mt-3 space-y-2 text-sm text-slate-400">
-                        <li className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
-                          Slow lead response time
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
-                          Unstructured lead pipeline
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
-                          Ad spend waste without tracking
-                        </li>
-                      </ul>
                     </div>
                   </div>
                 </div>
@@ -155,7 +110,7 @@ export function Audit() {
               <div className="mt-12 text-center">
                 <Link
                   to="/book"
-                  className="btn variant-primary size-lg"
+                  className="btn-primary text-base px-8 py-4"
                 >
                   Book a Consultation <ArrowRight size={16} />
                 </Link>
@@ -164,7 +119,7 @@ export function Audit() {
           ) : (
             <section className="max-w-2xl mx-auto">
               <SectionHeader>
-                <Badge className="mb-4 inline-block">AI-Powered Diagnostic</Badge>
+                <Badge className="mb-4 inline-block blue">AI-Powered Diagnostic</Badge>
                 <h1 className="text-balance">AI Revenue-Leak Audit</h1>
                 <p className="mt-4 text-lg text-slate-400">
                   Answer 5 questions to estimate how much revenue your business is losing
@@ -180,9 +135,7 @@ export function Audit() {
                         label="Your industry"
                         placeholder="e.g. Marketing Agency"
                         value={form.industry}
-                        onChange={(e) => {
-                          form.industry = e.target.value;
-                        }}
+                        onChange={(e) => update("industry", e.target.value)}
                         required
                       />
                     </div>
@@ -190,14 +143,10 @@ export function Audit() {
                       <Select
                         label="Monthly leads"
                         value={form.leads}
-                        onChange={(e) => {
-                          form.leads = e.target.value;
-                        }}
+                        onChange={(e) => update("leads", e.target.value)}
                       >
                         {LEAD_BANDS.map((b) => (
-                          <option key={b} value={b}>
-                            {b}
-                          </option>
+                          <option key={b} value={b}>{b}</option>
                         ))}
                       </Select>
                     </div>
@@ -205,14 +154,10 @@ export function Audit() {
                       <Select
                         label="Average response time to leads"
                         value={form.response}
-                        onChange={(e) => {
-                          form.response = e.target.value;
-                        }}
+                        onChange={(e) => update("response", e.target.value)}
                       >
                         {RESPONSE_TIMES.map((b) => (
-                          <option key={b} value={b}>
-                            {b}
-                          </option>
+                          <option key={b} value={b}>{b}</option>
                         ))}
                       </Select>
                     </div>
@@ -220,14 +165,10 @@ export function Audit() {
                       <Select
                         label="Lead pipeline / CRM"
                         value={form.pipeline}
-                        onChange={(e) => {
-                          form.pipeline = e.target.value;
-                        }}
+                        onChange={(e) => update("pipeline", e.target.value)}
                       >
                         {PIPELINES.map((b) => (
-                          <option key={b} value={b}>
-                            {b}
-                          </option>
+                          <option key={b} value={b}>{b}</option>
                         ))}
                       </Select>
                     </div>
@@ -235,14 +176,10 @@ export function Audit() {
                       <Select
                         label="Average deal size"
                         value={form.deal}
-                        onChange={(e) => {
-                          form.deal = e.target.value;
-                        }}
+                        onChange={(e) => update("deal", e.target.value)}
                       >
                         {DEAL_BANDS.map((b) => (
-                          <option key={b} value={b}>
-                            {b}
-                          </option>
+                          <option key={b} value={b}>{b}</option>
                         ))}
                       </Select>
                     </div>
@@ -252,9 +189,7 @@ export function Audit() {
                         type="email"
                         placeholder="you@company.com"
                         value={form.email}
-                        onChange={(e) => {
-                          form.email = e.target.value;
-                        }}
+                        onChange={(e) => update("email", e.target.value)}
                       />
                     </div>
                     <Button
@@ -272,11 +207,6 @@ export function Audit() {
             </section>
           )}
         </Container>
-      </main>
-
-      <Footer />
     </div>
   );
 }
-
-import { Footer } from "../components/Footer";

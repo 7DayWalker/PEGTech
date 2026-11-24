@@ -1,6 +1,7 @@
 /** 404 Not Found page. */
 import { Link } from "react-router-dom";
 import { useTitle } from "../lib/useTitle";
+
 export function NotFound() {
   useTitle("404 — PEGTech");
 
@@ -12,7 +13,7 @@ export function NotFound() {
         <p className="text-slate-400 mb-8">
           The page you're looking for doesn't exist or has been moved.
         </p>
-        <Link to="/" className="btn variant-primary">
+        <Link to="/" className="btn-primary">
           Go Home
         </Link>
       </div>
