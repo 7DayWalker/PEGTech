@@ -1,30 +1,37 @@
-/**
- * Dark mode toggle.
- */
-import { useEffect, useState } from "react"
-import { Moon, Sun } from "lucide-react"
+/** Dark mode toggle. */
+import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 
 export function ThemeToggle() {
-  const [dark, setDark] = useState(false)
+  const [dark, setDark] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem("pegtech-theme")
-    if (saved === "dark") setDark(true)
-    if (dark) document.documentElement.classList.add("dark")
-    else document.documentElement.classList.remove("dark")
-  }, [dark])
+    const saved = localStorage.getItem("pegtech-theme");
+    const isDark = saved === null || saved === "dark";
+    setDark(isDark);
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   return (
     <button
       onClick={() => {
-        const next = !dark
-        setDark(next)
-        localStorage.setItem("pegtech-theme", next ? "dark" : "light")
+        const next = !dark;
+        setDark(next);
+        localStorage.setItem("pegtech-theme", next ? "dark" : "light");
+        if (next) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
       }}
-      className="rounded-full p-2 text-muted hover:text-accent transition-colors"
-      aria-label="Toggle dark mode"
+      className="rounded-lg p-2 text-slate-400 hover:text-accent hover:bg-slate-800 transition-colors"
+      aria-label="Toggle theme"
     >
-      {dark ? <Sun size={20} /> : <Moon size={20} />}
+      {dark ? <Sun size={18} className="text-accent" /> : <Moon size={18} />}
     </button>
-  )
+  );
 }

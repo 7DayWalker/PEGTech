@@ -1,24 +1,26 @@
-/**
- * AI Revenue-Leak Audit calculator page.
- */
-import { useState } from "react"
-import { Link } from "react-router-dom"
-import { useTitle } from "../lib/useTitle"
-import { api } from "../lib/api"
-import { useToast } from "../lib/Toast"
-import { ChatWidget } from "../components/ChatWidget"
-import { AlertTriangle } from "lucide-react"
+/** AI Revenue-Leak Audit calculator page. */
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useTitle } from "../lib/useTitle";
+import { api } from "../lib/api";
+import { useToast } from "../lib/Toast";
+import { Button } from "../components/Button";
+import { Input, Select } from "../components/Input";
+import { Card } from "../components/Card";
+import { Container, SectionHeader } from "../components/Section";
+import { Badge } from "../components/Badge";
+import { AlertTriangle, ArrowRight, TrendingUp, DollarSign } from "lucide-react";
 
-const LEAD_BANDS = ["Under 50", "50 – 150", "150 – 400", "400+"]
-const RESPONSE_TIMES = ["Under 5 mins", "Under 1 hour", "Same day", "Next day +"]
-const PIPELINES = ["CRM / system", "Spreadsheet", "Inbox / DMs only", "Nothing structured"]
-const DEAL_BANDS = ["Under $250", "$250 – $1,500", "$1,500 – $6,000", "$6,000+"]
+const LEAD_BANDS = ["Under 50", "50 – 150", "150 – 400", "400+"];
+const RESPONSE_TIMES = ["Under 5 mins", "Under 1 hour", "Same day", "Next day +"];
+const PIPELINES = ["CRM / system", "Spreadsheet", "Inbox / DMs only", "Nothing structured"];
+const DEAL_BANDS = ["Under $250", "$250 – $1,500", "$1,500 – $6,000", "$6,000+"];
 
 export function Audit() {
-  useTitle("AI Revenue-Leak Audit — PEGTech")
-  const { show } = useToast()
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any>(null)
+  useTitle("AI Revenue-Leak Audit — PEGTech");
+  const { show } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
   const [form] = useState({
     industry: "Marketing Agency",
     leads: LEAD_BANDS[1],
@@ -26,116 +28,255 @@ export function Audit() {
     pipeline: PIPELINES[1],
     deal: DEAL_BANDS[2],
     email: "",
-  })
+  });
 
-  async function runAudit(e: { preventDefault: () => void }) {
-    e.preventDefault()
-    setLoading(true)
+  async function runAudit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
     try {
-      const res = await api.post("/api/public/audit", form)
+      const res = await api.post("/api/public/audit", form);
       if (res.ok) {
-        const data = await res.json()
-        setResult(data)
+        const data = await res.json();
+        setResult(data);
       }
     } catch {
-      show("Audit calculation failed. Please try again.", "error")
+      show("Audit calculation failed. Please try again.", "error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
-  if (!result) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <nav className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-center justify-between h-16">
-              <Link to="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
-                <span className="text-accent">P</span>EG<span className="text-primary">Tech</span>
+  return (
+    <div className="min-h-screen flex flex-col bg-dark-900 text-slate-100">
+      <nav className="sticky top-0 z-50 border-b border-border/50 bg-dark-900/80 backdrop-blur-md">
+        <Container>
+          <div className="flex items-center justify-between h-16">
+            <Link
+              to="/"
+              className="flex items-center gap-2 font-bold text-xl tracking-tight"
+            >
+              <span className="text-accent">P</span>EG<span className="text-white">Tech</span>
+            </Link>
+            <div className="ml-auto flex items-center gap-3">
+              <Link
+                to="/"
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                ← Back to Home
               </Link>
-              <Link to="/" className="text-muted hover:text-accent transition-colors">← Back to Home</Link>
             </div>
           </div>
-        </nav>
+        </Container>
+      </nav>
 
-        <main className="flex-1 py-12 px-4">
-          <div className="max-w-3xl mx-auto">
-            <div className="card p-8 mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <AlertTriangle className="w-6 h-6 text-accent" />
-                <h1 className="text-2xl font-bold text-text">AI Revenue-Leak Audit</h1>
+      <main className="flex-1 py-16">
+        <Container>
+          {result ? (
+            <section className="max-w-3xl mx-auto">
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 mb-4">
+                  <TrendingUp size={16} /> Audit Complete
+                </div>
+                <h1 className="text-3xl font-bold text-slate-100 mb-4">
+                  Your Revenue-Leak Report
+                </h1>
+                <p className="text-slate-400">
+                  Based on your inputs, here's your estimated monthly revenue leak.
+                </p>
               </div>
-              <p className="text-muted mb-6">
-                Answer 5 questions to estimate how much revenue your business is losing
-                to slow response times, poor pipeline, and ad waste.
-              </p>
-              <form onSubmit={(e) => runAudit(e)} className="space-y-5">
-                <div className="space-y-2">
-                  <label className="label">Your industry</label>
-                  <input
-                    className="input"
-                    value={form.industry}
-                    onChange={(e) => { form.industry = e.target.value }}
-                    placeholder="e.g. Marketing Agency"
-                    required
-                  />
+
+              <div className="grid md:grid-cols-3 gap-6 mb-8">
+                {[result.annual_leak_usd, result.monthly_leak_usd, result.risk_pct].map(
+                  (val: any, i: number) => {
+                    const labels = [
+                      "Annual Leak",
+                      "Monthly Leak",
+                      "Risk Level",
+                    ];
+                    const formats = [
+                      `$${(val / 1000).toFixed(0)}K`,
+                      `$${(val / 1000).toFixed(0)}K`,
+                      `${val}%`,
+                    ];
+                    return (
+                      <Card key={i} padding="lg" className="text-center">
+                        <div className="text-2xl font-bold text-accent mb-1">
+                          {formats[i]}
+                        </div>
+                        <div className="text-sm text-slate-400">{labels[i]}</div>
+                      </Card>
+                    );
+                  }
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <div className="Card p-6 rounded-2xl border border-border bg-dark-800/50">
+                  <div className="flex items-start gap-3">
+                    <DollarSign size={24} className="text-accent mt-0.5" />
+                    <div>
+                      <h3 className="font-bold text-slate-100">Estimated Annual Revenue Leak</h3>
+                      <p className="text-sm text-slate-400">
+                        Based on lead response times, pipeline health, and deal size,
+                        your business could be losing approximately{" "}
+                        <span className="text-accent font-bold">
+                          ${(result.annual_leak_usd / 1000).toFixed(0)}K per year
+                        </span>
+                        .
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="label">Monthly leads</label>
-                  <select className="input" value={form.leads} onChange={(e) => { form.leads = e.target.value }}>
-                    {LEAD_BANDS.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
+
+                <div className="Card p-6 rounded-2xl border border-border bg-dark-800/50">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle size={24} className="text-amber-500 mt-0.5" />
+                    <div>
+                      <h3 className="font-bold text-slate-100">Primary Risk Areas</h3>
+                      <ul className="mt-3 space-y-2 text-sm text-slate-400">
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                          Slow lead response time
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                          Unstructured lead pipeline
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                          Ad spend waste without tracking
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="label">Average response time to leads</label>
-                  <select className="input" value={form.response} onChange={(e) => { form.response = e.target.value }}>
-                    {RESPONSE_TIMES.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="label">Lead pipeline / CRM</label>
-                  <select className="input" value={form.pipeline} onChange={(e) => { form.pipeline = e.target.value }}>
-                    {PIPELINES.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="label">Average deal size</label>
-                  <select className="input" value={form.deal} onChange={(e) => { form.deal = e.target.value }}>
-                    {DEAL_BANDS.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="label">Your email (optional, for report)</label>
-                  <input
-                    type="email"
-                    className="input"
-                    value={form.email}
-                    onChange={(e) => { form.email = e.target.value }}
-                    placeholder="you@company.com"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn w-full py-3 disabled:opacity-50"
+              </div>
+
+              <div className="mt-12 text-center">
+                <Link
+                  to="/book"
+                  className="btn variant-primary size-lg"
                 >
-                  {loading ? "Calculating…" : "Run Audit"}
-                </button>
-              </form>
-            </div>
-          </div>
-        </main>
+                  Book a Consultation <ArrowRight size={16} />
+                </Link>
+              </div>
+            </section>
+          ) : (
+            <section className="max-w-2xl mx-auto">
+              <SectionHeader>
+                <Badge className="mb-4 inline-block">AI-Powered Diagnostic</Badge>
+                <h1 className="text-balance">AI Revenue-Leak Audit</h1>
+                <p className="mt-4 text-lg text-slate-400">
+                  Answer 5 questions to estimate how much revenue your business is losing
+                  to slow response times, poor pipeline, and ad waste.
+                </p>
+              </SectionHeader>
 
-        <footer className="border-t border-input bg-primary text-muted mt-auto pt-10 pb-6">
-          <div className="max-w-7xl mx-auto px-4">
-            <p className="mt-4 text-xs text-muted/60 text-center">
-              © {new Date().getFullYear()} PEGTech. Built for modern businesses.
-            </p>
-          </div>
-        </footer>
+              <Card padding="lg" className="mt-10">
+                <form onSubmit={(e) => runAudit(e)} className="space-y-6">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Input
+                        label="Your industry"
+                        placeholder="e.g. Marketing Agency"
+                        value={form.industry}
+                        onChange={(e) => {
+                          form.industry = e.target.value;
+                        }}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Select
+                        label="Monthly leads"
+                        value={form.leads}
+                        onChange={(e) => {
+                          form.leads = e.target.value;
+                        }}
+                      >
+                        {LEAD_BANDS.map((b) => (
+                          <option key={b} value={b}>
+                            {b}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Select
+                        label="Average response time to leads"
+                        value={form.response}
+                        onChange={(e) => {
+                          form.response = e.target.value;
+                        }}
+                      >
+                        {RESPONSE_TIMES.map((b) => (
+                          <option key={b} value={b}>
+                            {b}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Select
+                        label="Lead pipeline / CRM"
+                        value={form.pipeline}
+                        onChange={(e) => {
+                          form.pipeline = e.target.value;
+                        }}
+                      >
+                        {PIPELINES.map((b) => (
+                          <option key={b} value={b}>
+                            {b}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Select
+                        label="Average deal size"
+                        value={form.deal}
+                        onChange={(e) => {
+                          form.deal = e.target.value;
+                        }}
+                      >
+                        {DEAL_BANDS.map((b) => (
+                          <option key={b} value={b}>
+                            {b}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Input
+                        label="Your email (optional, for report)"
+                        type="email"
+                        placeholder="you@company.com"
+                        value={form.email}
+                        onChange={(e) => {
+                          form.email = e.target.value;
+                        }}
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="lg"
+                      disabled={loading}
+                      className="w-full py-4"
+                    >
+                      {loading ? "Calculating…" : "Run Audit"}
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+            </section>
+          )}
+        </Container>
+      </main>
 
-        <ChatWidget />
-      </div>
-  )
-  }
+      <Footer />
+    </div>
+  );
 }
+
+import { Footer } from "../components/Footer";

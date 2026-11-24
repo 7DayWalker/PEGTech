@@ -1,24 +1,60 @@
-/**
- * Careers page — job listings and application form.
- */
-import { useState } from "react"
-import { useTitle } from "../lib/useTitle"
-import { api } from "../lib/api"
-import { useToast } from "../lib/Toast"
-import { ChatWidget } from "../components/ChatWidget"
+/** Careers page — job listings and application form. */
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useTitle } from "../lib/useTitle";
+import { api } from "../lib/api";
+import { useToast } from "../lib/Toast";
+import { Button } from "../components/Button";
+import { Input, Textarea } from "../components/Input";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "../components/Card";
+import { Container, SectionHeader } from "../components/Section";
+import { Badge } from "../components/Badge";
+import { Mail, ArrowRight } from "lucide-react";
 
 export function Careers() {
-  useTitle("Careers — PEGTech")
-  const { show } = useToast()
-  const [roles] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
+  useTitle("Careers — PEGTech");
+  const { show } = useToast();
+  const [roles] = useState<any[]>([
+    {
+      id: 1,
+      role: "Full-Stack Engineer",
+      meta: "Full-time • Remote",
+      blurb:
+        "Build scalable web applications and AI integrations using React, TypeScript, Python, and PostgreSQL.",
+    },
+    {
+      id: 2,
+      role: "AI Product Designer",
+      meta: "Full-time • Hybrid (Lagos)",
+      blurb:
+        "Design intuitive user experiences for AI-powered products and client dashboards.",
+    },
+    {
+      id: 3,
+      role: "Growth Marketer",
+      meta: "Full-time • Remote",
+      blurb:
+        "Lead SEO, content strategy, and paid campaigns to drive client acquisition.",
+    },
+  ]);
+  const [loading, setLoading] = useState(false);
   const [form] = useState({
-    role_id: "", name: "", email: "", phone: "", experience: "",
-  })
+    role_id: "",
+    name: "",
+    email: "",
+    phone: "",
+    experience: "",
+  });
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
     try {
       const res = await api.post("/api/public/careers/apply", {
         role_id: parseInt(form.role_id),
@@ -26,97 +62,155 @@ export function Careers() {
         email: form.email,
         phone: form.phone,
         experience: form.experience,
-      })
+      });
       if (res.ok) {
-        const data = await res.json()
-        show(`Application submitted!${data.flags?.length ? ` Flags: ${data.flags.join(", ")}` : ""}`, data.flags?.length ? "error" : "success")
+        const data = await res.json();
+        show(
+          `Application submitted!${
+            data.flags?.length ? ` Flags: ${data.flags.join(", ")}` : ""
+          }`,
+          data.flags?.length ? "error" : "success"
+        );
       }
     } catch {
-      show("Application failed. Please try again.", "error")
+      show("Application failed. Please try again.", "error");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <nav className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen flex flex-col bg-dark-900 text-slate-100">
+      <nav className="sticky top-0 z-50 border-b border-border/50 bg-dark-900/80 backdrop-blur-md">
+        <Container>
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
-              <span className="text-accent">P</span>EG<span className="text-primary">Tech</span>
+            <Link
+              to="/"
+              className="flex items-center gap-2 font-bold text-xl tracking-tight"
+            >
+              <span className="text-accent">P</span>EG<span className="text-white">Tech</span>
             </Link>
-            <Link to="/" className="text-muted hover:text-accent transition-colors">← Back to Home</Link>
+            <div className="ml-auto flex items-center gap-3">
+              <Link
+                to="/"
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                ← Back to Home
+              </Link>
+            </div>
           </div>
-        </div>
+        </Container>
       </nav>
 
-      <main className="flex-1 py-12 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="card p-8 mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-accent font-bold">Join our team</span>
-              <h1 className="text-2xl font-bold text-text">Careers at PEGTech</h1>
+      <main className="flex-1 py-16">
+        <Container>
+          <section className="max-w-4xl mx-auto">
+            <div className="text-center mb-16">
+              <Badge className="mb-4 inline-block">Join Our Team</Badge>
+              <h1 className="text-3xl font-bold text-slate-100 mb-4">
+                Careers at PEGTech
+              </h1>
+              <p className="text-slate-400">
+                We're building the future of client services. Help us shape it.
+              </p>
             </div>
-            <p className="text-muted">We're building the future of client services. Help us shape it.</p>
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {roles.map((role) => (
-              <div key={role.id} className="card p-6">
-                <h3 className="text-lg font-bold text-text">{role.role}</h3>
-                <p className="text-sm text-muted mb-3">{role.meta || ""}</p>
-                <p className="text-sm text-muted mb-4">{role.blurb || ""}</p>
-                <button
-                  onClick={() => { form.role_id = role.id.toString() }}
-                  className="text-accent font-medium hover:underline"
-                >
-                  Apply for this role →
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {form.role_id && (
-            <div className="card p-8 mt-8">
-              <h3 className="text-lg font-bold text-text mb-4">Apply</h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="label">Full name</label>
-                  <input className="input" value={form.name} onChange={(e) => { form.name = e.target.value }} required />
-                </div>
-                <div className="space-y-2">
-                  <label className="label">Email</label>
-                  <input type="email" className="input" value={form.email} onChange={(e) => { form.email = e.target.value }} required />
-                </div>
-                <div className="space-y-2">
-                  <label className="label">Phone</label>
-                  <input type="tel" className="input" value={form.phone} onChange={(e) => { form.phone = e.target.value }} required />
-                </div>
-                <div className="space-y-2">
-                  <label className="label">Experience</label>
-                  <textarea className="input" rows={4} value={form.experience} onChange={(e) => { form.experience = e.target.value }} required />
-                </div>
-                <button type="submit" disabled={loading} className="btn w-full py-3 disabled:opacity-50">
-                  {loading ? "Submitting…" : "Submit Application"}
-                </button>
-              </form>
+            <div className="grid md:grid-cols-2 gap-6">
+              {roles.map((role) => (
+                <Card key={role.id} hover padding="lg" className="group">
+                  <CardHeader className="mb-4">
+                    <div className="flex items-start gap-3">
+                      <Mail size={20} className="text-accent mt-0.5" />
+                      <div>
+                        <CardTitle>{role.role}</CardTitle>
+                        <span className="text-xs text-slate-500 uppercase tracking-wider">
+                          {role.meta}
+                        </span>
+                      </div>
+                    </div>
+                    <CardDescription>{role.blurb}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        form.role_id = role.id.toString();
+                      }}
+                      className="w-full"
+                    >
+                      Apply for this role <ArrowRight size={16} />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          )}
-        </div>
+
+            {form.role_id && (
+              <Card padding="lg" className="mt-10">
+                <SectionHeader className="text-left mb-8">
+                  <h2 className="text-2xl font-bold text-slate-100 mb-2">
+                    Apply
+                  </h2>
+                </SectionHeader>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <Input
+                    label="Full name"
+                    placeholder="Jane Doe"
+                    value={form.name}
+                    onChange={(e) => {
+                      form.name = e.target.value;
+                    }}
+                    required
+                  />
+                  <Input
+                    label="Email"
+                    type="email"
+                    placeholder="jane@company.com"
+                    value={form.email}
+                    onChange={(e) => {
+                      form.email = e.target.value;
+                    }}
+                    required
+                  />
+                  <Input
+                    label="Phone"
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={form.phone}
+                    onChange={(e) => {
+                      form.phone = e.target.value;
+                    }}
+                    required
+                  />
+                  <Textarea
+                    label="Experience"
+                    rows={4}
+                    value={form.experience}
+                    onChange={(e) => {
+                      form.experience = e.target.value;
+                    }}
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    {loading ? "Submitting…" : "Submit Application"}
+                  </Button>
+                </form>
+              </Card>
+            )}
+          </section>
+        </Container>
       </main>
 
-      <footer className="border-t border-input bg-primary text-muted mt-auto pt-10 pb-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="mt-4 text-xs text-muted/60 text-center">
-            © {new Date().getFullYear()} PEGTech. Built for modern businesses.
-          </p>
-        </div>
-      </footer>
-
-      <ChatWidget />
+      <Footer />
     </div>
-  )
+  );
 }
 
-import { Link } from "react-router-dom"
+import { Footer } from "../components/Footer";

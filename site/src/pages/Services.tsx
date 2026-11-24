@@ -1,65 +1,140 @@
-/**
- * Services page.
- */
-import { Link } from "react-router-dom"
-import { useTitle } from "../lib/useTitle"
-import { SERVICES } from "../lib/content"
-import { ChatWidget } from "../components/ChatWidget"
+/** Services page. */
+import { Link } from "react-router-dom";
+import { useTitle } from "../lib/useTitle";
+import { Card, CardTitle, CardDescription, CardContent } from "../components/Card";
+import { Container, SectionHeader } from "../components/Section";
+import { Badge } from "../components/Badge";
+import { SERVICES } from "../lib/content";
+import {
+  Globe,
+  Cpu,
+  Megaphone,
+  Palette as PaletteIcon,
+  ArrowRight,
+  Layers,
+  Zap,
+  Settings,
+} from "lucide-react";
+
+const SERVICE_ICONS: Record<string, React.ElementType> = {
+  "Web Development": Globe,
+  "AI Solutions": Cpu,
+  "Digital Marketing": Megaphone,
+  "Brand & Design": PaletteIcon,
+  "Tech Consulting": Settings,
+};
+
+const SERVICE_FEATURES: Record<string, string[]> = {
+  "Web Development": [
+    "Custom websites and web applications",
+    "Performance and scale optimization",
+    "Responsive design for all devices",
+    "SEO-friendly architecture",
+  ],
+  "AI Solutions": [
+    "AI agents and automation",
+    "Machine learning models",
+    "Natural language processing",
+    "Computer vision",
+  ],
+  "Digital Marketing": [
+    "SEO and content strategy",
+    "Campaign management",
+    "Social media marketing",
+    "Conversion optimization",
+  ],
+  "Brand & Design": [
+    "Visual identity design",
+    "UI/UX design",
+    "Brand guidelines",
+    "Design systems",
+  ],
+  "Tech Consulting": [
+    "Technology strategy",
+    "Architecture review",
+    "Fractional CTO support",
+    "Technical due diligence",
+  ],
+};
 
 export function Services() {
-  useTitle("Services — PEGTech")
+  useTitle("Services — PEGTech");
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <nav className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen flex flex-col bg-dark-900 text-slate-100">
+      <nav className="sticky top-0 z-50 border-b border-border/50 bg-dark-900/80 backdrop-blur-md">
+        <Container>
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
-              <span className="text-accent">P</span>EG<span className="text-primary">Tech</span>
+            <Link
+              to="/"
+              className="flex items-center gap-2 font-bold text-xl tracking-tight"
+            >
+              <span className="text-accent">P</span>EG<span className="text-white">Tech</span>
             </Link>
-            <div className="ml-auto flex items-center gap-4">
-              <Link to="/" className="text-muted hover:text-accent transition-colors">← Back to Home</Link>
-              <Link to="/book" className="btn">Book a Call</Link>
+
+            <div className="ml-auto flex items-center gap-3">
+              <Link
+                to="/"
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                ← Back to Home
+              </Link>
+              <Link to="/book" className="btn variant-primary size-sm">
+                Book a Call
+              </Link>
             </div>
           </div>
-        </div>
+        </Container>
       </nav>
 
-      <main className="flex-1 py-12 px-4">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-text mb-8">Our Services</h1>
-          <div className="space-y-6">
-            {SERVICES.map((s) => (
-              <div key={s.name} className="card p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold text-text">{s.name}</h3>
-                  <span className="text-accent font-semibold">Starting at $2,500</span>
-                </div>
-                <p className="text-muted mb-4">{s.description}</p>
-                <ul className="space-y-2 text-sm text-muted">
-                  <li>• Discovery & requirements gathering</li>
-                  <li>• Design & prototyping</li>
-                  <li>• Development & QA</li>
-                  <li>• Launch & post-launch support</li>
-                </ul>
-                <Link to="/book" className="mt-4 inline-block text-accent font-medium hover:underline">
-                  Book this service →
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
+      <main className="flex-1">
+        <section className="py-24">
+          <Container>
+            <SectionHeader>
+              <Badge className="mb-4 inline-block">Our Expertise</Badge>
+              <h1 className="text-balance">Services</h1>
+              <p className="mt-4 text-lg text-slate-400 max-w-2xl">
+                Full-stack digital agency services — web, app, AI, marketing, design,
+                and consulting. Built for modern businesses.
+              </p>
+            </SectionHeader>
+
+            <div className="mt-16 grid md:grid-cols-3 gap-6">
+              {SERVICES.map((s) => {
+                const Icon = SERVICE_ICONS[s.name] || Layers;
+                const features = SERVICE_FEATURES[s.name] || [];
+                return (
+                  <Card key={s.name} hover padding="lg" className="group">
+                    <div className="w-14 h-14 rounded-2xl bg-accent/5 flex items-center justify-center text-accent mb-6 group-hover:bg-accent/10 transition-colors duration-300">
+                      <Icon size={28} />
+                    </div>
+                    <CardTitle>{s.name}</CardTitle>
+                    <CardDescription>{s.description}</CardDescription>
+                    <CardContent className="mt-6 space-y-3">
+                      {features.map((f) => (
+                        <div key={f} className="flex items-center gap-2">
+                          <Zap size={14} className="text-accent/50" />
+                          <span className="text-sm text-slate-400">{f}</span>
+                        </div>
+                      ))}
+                      <Link
+                        to="/book"
+                        className="mt-4 inline-flex items-center gap-1 text-accent text-sm font-medium hover:underline transition-colors"
+                      >
+                        Book this service <ArrowRight size={16} />
+                      </Link>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </Container>
+        </section>
       </main>
 
-      <footer className="border-t border-input bg-primary text-muted mt-auto pt-10 pb-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="mt-4 text-xs text-muted/60 text-center">
-            © {new Date().getFullYear()} PEGTech. Built for modern businesses.
-          </p>
-        </div>
-      </footer>
-
-      <ChatWidget />
+      <Footer />
     </div>
-  )
+  );
 }
+
+import { Footer } from "../components/Footer";
