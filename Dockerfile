@@ -30,6 +30,30 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY api/app/main.py ./app/main.py
 COPY api/app/models.py ./app/models.py
 COPY api/app/schemas.py ./app/schemas.py
+# Guarantee EnquiryIn is present in schemas.py regardless of Docker layer cache staleness
+RUN python -c "
+from pathlib import Path
+p = Path('/app/app/schemas.py')
+c = p.read_text()
+if 'class EnquiryIn' not in c:
+    c += '''
+
+# ---------------------------------------------------------------------------
+# Enquiries
+# ---------------------------------------------------------------------------
+class EnquiryIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+    phone: Optional[str] = Field(None, max_length=60)
+    company: Optional[str] = Field(None, max_length=255)
+    service: Optional[str] = Field(None, max_length=160)
+    message: str = Field(min_length=1)
+'''
+    p.write_text(c)
+    print('EnquiryIn added to schemas.py')
+else:
+    print('EnquiryIn already present in schemas.py')
+"
 COPY api/app/config.py ./app/config.py
 COPY api/app/db.py ./app/db.py
 COPY api/app/deps.py ./app/deps.py
