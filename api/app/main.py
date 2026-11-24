@@ -48,11 +48,12 @@ print("boot: startup sequence complete", flush=True)
 
 # Import routers individually with try/except so a stale cached router
 # (e.g. schemas.py missing EnquiryIn) cannot crash the whole app.
+import importlib
 _routers = []
 for _mod_name in ("public", "admin", "clients", "projects", "leads",
                   "campaigns", "bookings", "audit", "careers", "chat", "enquiries"):
     try:
-        _mod = __import__(f"app.routers.{_mod_name}", fromlist=["router"])
+        _mod = importlib.import_module(f"app.routers.{_mod_name}")
         _routers.append(_mod.router)
         print(f"router loaded: {_mod_name}", flush=True)
     except Exception as _e:
