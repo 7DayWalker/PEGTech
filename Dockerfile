@@ -24,9 +24,21 @@ COPY api/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY api/app ./app
-# Re-copy schemas.py to bust any stale Docker layer cache for this file
+# Copy backend app files individually so each has its own
+# content-based cache key. This prevents stale Docker layer cache
+# from serving an outdated schemas.py (missing EnquiryIn).
+COPY api/app/main.py ./app/main.py
+COPY api/app/models.py ./app/models.py
 COPY api/app/schemas.py ./app/schemas.py
+COPY api/app/config.py ./app/config.py
+COPY api/app/db.py ./app/db.py
+COPY api/app/deps.py ./app/deps.py
+COPY api/app/security.py ./app/security.py
+COPY api/app/security_routes.py ./app/security_routes.py
+COPY api/app/seed.py ./app/seed.py
+COPY api/app/services.py ./app/services.py
+COPY api/app/routers ./app/routers
+COPY api/app/services ./app/services
 
 # Copy the built SPA from the frontend stage to where main.py serves it
 # (main.py resolves SITE_DIST to /site/dist)
