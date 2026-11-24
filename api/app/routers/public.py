@@ -53,8 +53,10 @@ def list_audit_reports(db: Session = Depends(get_db)):
 
 
 @router.post("/enquiries")
-def create_enquiry(payload: schemas.EnquiryIn, db: Session = Depends(get_db)):
-    enquiry = models.Enquiry(**payload.model_dump())
+def create_enquiry(payload: dict, db: Session = Depends(get_db)):
+    from app.schemas import EnquiryIn
+    enquiry_data = EnquiryIn.model_validate(payload)
+    enquiry = models.Enquiry(**enquiry_data.model_dump())
     db.add(enquiry)
     db.commit()
     db.refresh(enquiry)
