@@ -27,6 +27,8 @@ COPY api/app ./app
 # (main.py resolves SITE_DIST to /site/dist)
 COPY --from=frontend /site/dist /site/dist
 
+# Cache-buster: forces full rebuild to pick up schemas.py EnquiryIn fix
+ENV PEGTech_BUILD_REFRESH=2
 ENV PORT=8080
 EXPOSE 8080
 
