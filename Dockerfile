@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Cache-buster: change this value to force Docker to re-copy api/app/
 # and pick up schemas.py with EnquiryIn
-ARG PEGTech_BUILD_REFRESH=2
+ARG PEGTech_BUILD_REFRESH=3
 ENV PEGTech_BUILD_REFRESH=$PEGTech_BUILD_REFRESH
 
 COPY api/app ./app
