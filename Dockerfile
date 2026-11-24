@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 ARG PEGTech_BUILD_REFRESH=4
 ENV PEGTech_BUILD_REFRESH=$PEGTech_BUILD_REFRESH
 
-COPY api/app ./app
+COPY api/app/ ./app/
 
 # Copy the built SPA from the frontend stage to where main.py serves it
 COPY --from=frontend /site/dist /site/dist
