@@ -25,6 +25,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 COPY api/app ./app
+# Re-copy schemas.py to bust any stale Docker layer cache for this file
+COPY api/app/schemas.py ./app/schemas.py
 
 # Copy the built SPA from the frontend stage to where main.py serves it
 # (main.py resolves SITE_DIST to /site/dist)
