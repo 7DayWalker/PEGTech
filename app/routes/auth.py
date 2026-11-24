@@ -19,6 +19,35 @@ def get_user_by_email(db: Session, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
 
+async def get_current_user(
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+) -> User:
+    """Extract and verify JWT, return the User."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid Authorization header",
+        )
+
+    token = authorization.split(" ", 1)[1]
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+
+    user_id = int(payload.get("sub"))
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+    return user
+
+
 @router.post("/register", response_model=Token)
 async def register(user_in: UserCreate, db: Session = Depends(get_db)):
     """Register a new user."""
@@ -56,30 +85,10 @@ async def login(user_in: UserLogin, db: Session = Depends(get_db)):
     return Token(access_token=access_token, token_type="bearer")
 
 
-async def get_current_user(
-    authorization: Optional[str] = Header(None),
+@router.get("/me", response_model=UserOut)
+async def get_current_user_route(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> User:
-    """Extract and verify JWT, return the User."""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid Authorization header",
-        )
-
-    token = authorization.split(" ", 1)[1]
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-
-    user_id = int(payload.get("sub"))
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    return user
+):
+    """Get the currently authenticated user."""
+    return current_user
