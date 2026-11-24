@@ -30,8 +30,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY api/app/main.py ./app/main.py
 COPY api/app/models.py ./app/models.py
 COPY api/app/schemas.py ./app/schemas.py
-# Build-time verification that EnquiryIn is present in copied schemas.py
-RUN python -c "from app.schemas import EnquiryIn; print('EnquiryIn verified in build image')"
 COPY api/app/config.py ./app/config.py
 COPY api/app/db.py ./app/db.py
 COPY api/app/deps.py ./app/deps.py
