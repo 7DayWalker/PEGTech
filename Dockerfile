@@ -21,8 +21,10 @@ COPY api/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Bust Docker layer cache so schemas.py (with EnquiryIn) is always freshly copied
-RUN echo "PEGTech cache-buster: schemas.py EnquiryIn fix"
+# Cache-buster: change this value to force Docker to re-copy api/app/
+# and pick up schemas.py with EnquiryIn
+ARG PEGTech_BUILD_REFRESH=2
+ENV PEGTech_BUILD_REFRESH=$PEGTech_BUILD_REFRESH
 
 COPY api/app ./app
 
