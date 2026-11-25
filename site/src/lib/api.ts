@@ -61,6 +61,17 @@ function getAuthToken(): string | null {
   return memoryToken
 }
 
+export function hasAuthToken(): boolean {
+  return memoryToken !== null
+}
+
+/** Fired whenever a request comes back 401 — AuthContext listens for this
+ * and clears its user state, which in turn drives any gated page to
+ * (client-side) navigate away. Deliberately NOT a hard window.location
+ * redirect: that nukes the whole SPA on every expired/invalid token, which
+ * is jarring and throws away unrelated page state for no reason. */
+export const UNAUTHORIZED_EVENT = "pegtech:unauthorized"
+
 async function request(
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -81,12 +92,8 @@ async function request(
   })
 
   if (res.status === 401) {
-    // eslint-disable-next-line no-console
-    console.error(
-      `[api] 401 on ${String(input)} — had token: ${Boolean(token)}, memoryToken set: ${memoryToken !== null}`,
-    )
     clearAuthToken()
-    window.location.href = "/signin"
+    window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
   }
 
   return res

@@ -1,13 +1,22 @@
 /** Floating frosted-glass pill navigation bar. */
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, LayoutDashboard, LogOut } from "lucide-react";
 import logoMark from "../assets/brand/pegtech-icon-mark.png";
+import { useAuth } from "../lib/AuthContext";
 
 export function Nav() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const isAuthPage = location.pathname.startsWith("/signin") || location.pathname === "/signup";
+
+  function handleSignOut() {
+    logout();
+    setOpen(false);
+    navigate("/");
+  }
 
   const links = [
     { to: "/", label: "Home" },
@@ -43,7 +52,27 @@ export function Nav() {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            {!isAuthPage && (
+            {!isAuthPage && user && (
+              <div className="hidden md:flex items-center gap-3">
+                {user.typ === "staff" && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors"
+                  >
+                    <LayoutDashboard size={15} />
+                    Dashboard
+                  </Link>
+                )}
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors"
+                >
+                  <LogOut size={15} />
+                  Sign out
+                </button>
+              </div>
+            )}
+            {!isAuthPage && !user && (
               <Link to="/signin" className="hidden md:block text-sm text-slate-400 hover:text-white transition-colors">
                 Sign in
               </Link>
@@ -80,13 +109,33 @@ export function Nav() {
             >
               Book a Call
             </Link>
-            <Link
-              to="/signin"
-              className="block px-4 py-2.5 text-slate-400 hover:text-white text-center transition-colors"
-              onClick={() => setOpen(false)}
-            >
-              Sign in
-            </Link>
+            {user ? (
+              <>
+                {user.typ === "staff" && (
+                  <Link
+                    to="/admin"
+                    className="block px-4 py-2.5 text-slate-400 hover:text-white text-center transition-colors"
+                    onClick={() => setOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                )}
+                <button
+                  onClick={handleSignOut}
+                  className="block w-full px-4 py-2.5 text-slate-400 hover:text-white text-center transition-colors"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/signin"
+                className="block px-4 py-2.5 text-slate-400 hover:text-white text-center transition-colors"
+                onClick={() => setOpen(false)}
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         )}
       </nav>

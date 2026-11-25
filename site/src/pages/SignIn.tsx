@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTitle } from "../lib/useTitle";
-import { api, setAuthToken } from "../lib/api";
+import { api } from "../lib/api";
+import { useAuth } from "../lib/AuthContext";
 import { useToast } from "../lib/Toast";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
@@ -13,6 +14,7 @@ export function SignIn() {
   useTitle("Sign in — PEGTech");
   const navigate = useNavigate();
   const { show } = useToast();
+  const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,14 +33,20 @@ export function SignIn() {
       if (res.ok) {
         const data = await res.json();
         if (data.access_token) {
-          setAuthToken(data.access_token);
+          login(data.access_token, {
+            typ: data.typ,
+            role: data.role,
+            name: data.name,
+            email: form.email.toLowerCase(),
+            client_id: data.client_id ?? null,
+          });
         }
-        // eslint-disable-next-line no-console
-        console.log(`[SignIn] login ok, typ=${data.typ}, got token: ${Boolean(data.access_token)}`);
         if (data.typ === "staff") {
           navigate("/admin");
         } else {
-          navigate("/client-portal");
+          // No standalone client portal exists yet — send clients home
+          // rather than to a route that doesn't resolve to anything.
+          navigate("/");
         }
       } else {
         const data = await res.json();

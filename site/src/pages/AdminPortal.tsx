@@ -3,19 +3,35 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTitle } from "../lib/useTitle";
 import { api } from "../lib/api";
+import { useAuth } from "../lib/AuthContext";
 import { Card } from "../components/Card";
 import { Container } from "../components/Section";
 import { Badge } from "../components/Badge";
 import { GlowBackground } from "../components/GlowBackground";
-import { Users, Folder, Mail, BarChart3, AlertTriangle } from "lucide-react";
+import { Users, Folder, Mail, BarChart3, AlertTriangle, RefreshCw } from "lucide-react";
 
 export function AdminPortal() {
   useTitle("Admin Portal — PEGTech");
   const navigate = useNavigate();
+  const { user, initializing } = useAuth();
   const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
+  // Auth gating lives here, driven by the shared session state — NOT by
+  // whether a single data call happens to succeed. That separation is the
+  // whole fix: a flaky/erroring /api/admin/stats call used to look
+  // identical to "you're not logged in" and would bounce straight back to
+  // sign-in even with a perfectly valid session.
   useEffect(() => {
+    if (!initializing && (!user || user.typ !== "staff")) {
+      navigate("/signin");
+    }
+  }, [initializing, user, navigate]);
+
+  function loadStats() {
+    setStatsLoading(true);
+    setStatsError(null);
     api.get("/api/admin/stats").then(async (res) => {
       if (res.ok) {
         setStats(await res.json());
@@ -26,19 +42,23 @@ export function AdminPortal() {
         } catch {
           detail = await res.text().catch(() => "");
         }
-        // eslint-disable-next-line no-console
-        console.error(`[AdminPortal] /api/admin/stats failed: ${res.status} ${detail}`);
+        setStatsError(`Couldn't load dashboard stats (${res.status}). ${detail}`);
       }
-      setLoading(false);
+      setStatsLoading(false);
     }).catch((err) => {
-      // eslint-disable-next-line no-console
-      console.error("[AdminPortal] /api/admin/stats network error:", err);
-      navigate("/signin");
-      setLoading(false);
+      setStatsError(`Couldn't load dashboard stats: ${err}`);
+      setStatsLoading(false);
     });
-  }, [navigate]);
+  }
 
-  if (loading) {
+  useEffect(() => {
+    if (user && user.typ === "staff") {
+      loadStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  if (initializing || !user || user.typ !== "staff") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-dark-900">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -46,9 +66,28 @@ export function AdminPortal() {
     );
   }
 
-  if (!stats) {
-    navigate("/signin");
-    return null;
+  if (statsError && !stats) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-900 px-4">
+        <Card padding="lg" className="max-w-md text-center">
+          <AlertTriangle size={28} className="mx-auto mb-3 text-orange-400" />
+          <p className="text-white font-semibold mb-1">Dashboard data unavailable</p>
+          <p className="text-sm text-gray-400 mb-4">{statsError}</p>
+          <button onClick={loadStats} className="btn-primary text-sm px-4 py-2 inline-flex items-center gap-2 mx-auto">
+            <RefreshCw size={15} />
+            Retry
+          </button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (statsLoading || !stats) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
