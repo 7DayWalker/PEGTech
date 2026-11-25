@@ -42,8 +42,45 @@ def _seed_if_empty():
             print(f"seed-on-empty failed (continuing anyway): {e}")
 
 
+def _reset_admin_if_requested():
+    """Explicit opt-in override: sync PEGTECH_ADMIN_EMAIL/PASSWORD onto the
+    admin_users table even when it's already populated (e.g. a prior deploy
+    seeded the default demo credentials, and setting PEGTECH_ADMIN_PASSWORD
+    alone won't touch that existing row — the seed-on-empty path only ever
+    runs once, against an empty table)."""
+    if os.environ.get("PEGTECH_RESET_ADMIN_PASSWORD", "") != "1":
+        return
+    from app.db import SessionLocal
+    from app import models
+    from app.security import hash_password
+    from app.config import ADMIN_EMAIL, ADMIN_PASSWORD
+    email = ADMIN_EMAIL.strip().lower()
+    with SessionLocal() as db:
+        try:
+            user = db.query(models.AdminUser).filter_by(email=email).first()
+            if user:
+                user.password_hash = hash_password(ADMIN_PASSWORD)
+                user.is_active = True
+                db.commit()
+                print(f"PEGTECH_RESET_ADMIN_PASSWORD=1 — reset password for existing admin {email}")
+            else:
+                user = models.AdminUser(
+                    email=email,
+                    password_hash=hash_password(ADMIN_PASSWORD),
+                    name="Admin",
+                    role="owner",
+                    is_active=True,
+                )
+                db.add(user)
+                db.commit()
+                print(f"PEGTECH_RESET_ADMIN_PASSWORD=1 — created missing admin {email}")
+        except Exception as e:
+            print(f"admin-reset failed (continuing anyway): {e}")
+
+
 print("boot: checking demo seed ...", flush=True)
 _seed_if_empty()
+_reset_admin_if_requested()
 print("boot: startup sequence complete", flush=True)
 
 # Import routers individually with try/except so a stale cached router
