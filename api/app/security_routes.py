@@ -16,8 +16,18 @@ SESSION_COOKIE = "pegtech_session"
 
 
 def _session_response(request: Request, payload: dict, token: str) -> JSONResponse:
+    # Prefer an explicit forwarded-proto signal, but it doesn't reliably
+    # survive every hop in a multi-proxy setup (platform edge → sandbox →
+    # dev proxy → backend). Fall back to treating any non-localhost Host as
+    # HTTPS — true for both the sandboxed preview domain and real
+    # deployments (Railway), and this is what lets the session cookie
+    # survive when the app is embedded in an iframe under a different
+    # parent domain (which browsers treat as a cross-site context,
+    # requiring SameSite=None; Secure).
     forwarded = (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip().lower()
-    https = request.url.scheme == "https" or forwarded == "https"
+    host = (request.headers.get("host") or "").split(":")[0].lower()
+    is_local = host in ("", "localhost", "127.0.0.1", "0.0.0.0")
+    https = request.url.scheme == "https" or forwarded == "https" or not is_local
     resp = JSONResponse(payload)
     resp.set_cookie(
         SESSION_COOKIE, token,

@@ -6,6 +6,7 @@ import { Card } from "../components/Card";
 import { Input } from "../components/Input";
 import { Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
+import { GlowBackground } from "../components/GlowBackground";
 import { Clock, ArrowRight } from "lucide-react";
 
 const ARTICLES = [
@@ -43,11 +44,12 @@ export function Blog() {
   useTitle("Blog — PEGTech");
 
   return (
-    <div className="flex-1 py-24">
-        <Container>
+    <div className="relative overflow-hidden py-24">
+        <GlowBackground />
+        <Container className="relative">
           <SectionHeader>
             <Badge variant="accent" className="mb-4 inline-block">Insights</Badge>
-            <h1 className="text-balance">Blog</h1>
+            <h1 className="text-balance"><span className="text-gradient">Blog</span></h1>
             <p className="mt-4 text-lg text-gray-400 max-w-2xl">
               Thought leadership on digital transformation, AI, and growing your
               business online.

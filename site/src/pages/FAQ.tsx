@@ -4,6 +4,7 @@ import { useTitle } from "../lib/useTitle";
 import { Card } from "../components/Card";
 import { Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
+import { GlowBackground } from "../components/GlowBackground";
 import { ChevronDown, ArrowRight } from "lucide-react";
 import { useState } from "react";
 
@@ -56,11 +57,12 @@ export function FAQ() {
   };
 
   return (
-    <div className="flex-1 py-24">
-        <Container>
+    <div className="relative overflow-hidden py-24">
+        <GlowBackground />
+        <Container className="relative">
           <SectionHeader>
             <Badge variant="accent" className="mb-4 inline-block">Frequently Asked Questions</Badge>
-            <h1 className="text-balance">FAQ</h1>
+            <h1 className="text-balance"><span className="text-gradient">FAQ</span></h1>
             <p className="mt-4 text-lg text-gray-400 max-w-2xl">
               Everything you need to know about working with PEGTech.
             </p>

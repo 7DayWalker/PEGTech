@@ -1,12 +1,12 @@
 """
 Chat routes — AI CSR and conversation logging.
 """
+import json
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import models
-from app.services import csr_response_ai
-from app.services.ai import csr_response_ai as ai_csr
+from app.services import csr_response as ai_csr
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -40,8 +40,5 @@ def csr_chat(payload: dict, request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/interactions")
-def list_interactions(request, db: Session = Depends(get_db)):
+def list_interactions(request: Request, db: Session = Depends(get_db)):
     return db.query(models.AiInteraction).order_by(models.AiInteraction.created_at.desc()).limit(50).all()
-
-
-import json

@@ -1,7 +1,7 @@
 """
 Campaign routes — staff manage campaigns and sends.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import models
@@ -12,13 +12,13 @@ router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
 
 
 @router.get("/", response_model=list[schemas.CampaignOut])
-def list_campaigns(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_campaigns(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.Campaign).all()
 
 
 @router.post("/", response_model=schemas.CampaignOut)
-def create_campaign(payload: schemas.CampaignCreate, request,
-                    db: Session = Depends(get_db), _=Depends(require_staff)):
+def create_campaign(payload: schemas.CampaignCreate, request: Request,
+                    db: Session = Depends(get_db), _=Depends(require_staff())):
     from app.deps import _payload
     p = _payload(request)
     user = db.query(models.AdminUser).filter_by(email=p.get("sub")).first()
@@ -30,8 +30,8 @@ def create_campaign(payload: schemas.CampaignCreate, request,
 
 
 @router.put("/{campaign_id}", response_model=schemas.CampaignOut)
-def update_campaign(campaign_id: int, payload: schemas.CampaignUpdate, request,
-                    db: Session = Depends(get_db), _=Depends(require_staff)):
+def update_campaign(campaign_id: int, payload: schemas.CampaignUpdate, request: Request,
+                    db: Session = Depends(get_db), _=Depends(require_staff())):
     campaign = db.get(models.Campaign, campaign_id)
     if not campaign:
         raise HTTPException(status_code=404, detail="Campaign not found.")
@@ -43,5 +43,5 @@ def update_campaign(campaign_id: int, payload: schemas.CampaignUpdate, request,
 
 
 @router.get("/{campaign_id}/sends", response_model=list[schemas.SendOut])
-def list_sends(campaign_id: int, request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_sends(campaign_id: int, request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.CampaignSend).filter_by(campaign_id=campaign_id).all()

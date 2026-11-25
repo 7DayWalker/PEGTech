@@ -10,6 +10,13 @@ from app import models
 
 def _candidates(request: Request) -> list[str]:
     out: list[str] = []
+    # Custom header name — some reverse-proxy layers in front of this app
+    # (e.g. sandboxed live-preview hosting) strip standard `Authorization`
+    # and `Cookie` headers outright for every request, regardless of value.
+    # A non-standard header name is left untouched, so it's checked first.
+    custom = request.headers.get("x-pegtech-auth") or ""
+    if custom:
+        out.append(custom.strip())
     auth = request.headers.get("authorization") or ""
     if auth.lower().startswith("bearer ") and len(auth) > 7:
         out.append(auth[7:].strip())

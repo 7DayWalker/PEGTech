@@ -8,6 +8,7 @@ import { Input, Textarea } from "../components/Input";
 import { Card, CardHeader, CardContent } from "../components/Card";
 import { Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
+import { GlowBackground } from "../components/GlowBackground";
 import { Mail, ArrowRight } from "lucide-react";
 
 const ROLES = [
@@ -74,13 +75,14 @@ export function Careers() {
   }
 
   return (
-    <div className="flex-1 py-16">
-        <Container>
+    <div className="relative overflow-hidden py-16">
+        <GlowBackground />
+        <Container className="relative">
           <section className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
               <Badge variant="accent" className="mb-4 inline-block">Join Our Team</Badge>
               <h1 className="text-3xl font-bold text-white mb-4">
-                Careers at PEGTech
+                Careers at <span className="text-gradient">PEGTech</span>
               </h1>
               <p className="text-gray-400">
                 We're building the future of client services. Help us shape it.

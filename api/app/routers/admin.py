@@ -1,7 +1,7 @@
 """
 Admin routes — staff-only management.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session, joinedload
 from app.db import get_db
 from app import models
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 # ── Dashboard stats ──
 @router.get("/stats")
-def admin_stats(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def admin_stats(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return {
         "total_clients": db.query(models.Client).count(),
         "total_projects": db.query(models.Project).count(),
@@ -26,7 +26,7 @@ def admin_stats(request, db: Session = Depends(get_db), _=Depends(require_staff)
 
 # ── Clients ──
 @router.get("/clients", response_model=list[schemas.ClientOut])
-def list_clients(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_clients(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.Client).options(
         joinedload(models.Client.strategist),
         joinedload(models.Client.delivery_lead),
@@ -35,7 +35,7 @@ def list_clients(request, db: Session = Depends(get_db), _=Depends(require_staff
 
 
 @router.post("/clients", response_model=schemas.ClientOut)
-def create_client(payload: schemas.ClientCreate, request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def create_client(payload: schemas.ClientCreate, request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     client = models.Client(**payload.model_dump())
     db.add(client)
     db.commit()
@@ -44,8 +44,8 @@ def create_client(payload: schemas.ClientCreate, request, db: Session = Depends(
 
 
 @router.put("/clients/{client_id}", response_model=schemas.ClientOut)
-def update_client(client_id: int, payload: schemas.ClientUpdate, request,
-                  db: Session = Depends(get_db), _=Depends(require_staff)):
+def update_client(client_id: int, payload: schemas.ClientUpdate, request: Request,
+                  db: Session = Depends(get_db), _=Depends(require_staff())):
     client = db.get(models.Client, client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client not found.")
@@ -58,13 +58,13 @@ def update_client(client_id: int, payload: schemas.ClientUpdate, request,
 
 # ── Projects ──
 @router.get("/projects", response_model=list[schemas.ProjectOut])
-def list_projects(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_projects(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.Project).all()
 
 
 @router.post("/projects", response_model=schemas.ProjectOut)
-def create_project(payload: schemas.ProjectCreate, request,
-                   db: Session = Depends(get_db), _=Depends(require_staff)):
+def create_project(payload: schemas.ProjectCreate, request: Request,
+                   db: Session = Depends(get_db), _=Depends(require_staff())):
     project = models.Project(**payload.model_dump())
     db.add(project)
     db.commit()
@@ -74,13 +74,13 @@ def create_project(payload: schemas.ProjectCreate, request,
 
 # ── Leads ──
 @router.get("/leads", response_model=list[schemas.LeadOut])
-def list_leads(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_leads(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.Lead).all()
 
 
 @router.post("/leads", response_model=schemas.LeadOut)
-def create_lead(payload: schemas.LeadCreate, request,
-                db: Session = Depends(get_db), _=Depends(require_staff)):
+def create_lead(payload: schemas.LeadCreate, request: Request,
+                db: Session = Depends(get_db), _=Depends(require_staff())):
     lead = models.Lead(**payload.model_dump())
     db.add(lead)
     db.commit()
@@ -89,8 +89,8 @@ def create_lead(payload: schemas.LeadCreate, request,
 
 
 @router.put("/leads/{lead_id}", response_model=schemas.LeadOut)
-def update_lead(lead_id: int, payload: schemas.LeadUpdate, request,
-                db: Session = Depends(get_db), _=Depends(require_staff)):
+def update_lead(lead_id: int, payload: schemas.LeadUpdate, request: Request,
+                db: Session = Depends(get_db), _=Depends(require_staff())):
     lead = db.get(models.Lead, lead_id)
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found.")
@@ -103,13 +103,13 @@ def update_lead(lead_id: int, payload: schemas.LeadUpdate, request,
 
 # ── Campaigns ──
 @router.get("/campaigns", response_model=list[schemas.CampaignOut])
-def list_campaigns(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_campaigns(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.Campaign).all()
 
 
 @router.post("/campaigns", response_model=schemas.CampaignOut)
-def create_campaign(payload: schemas.CampaignCreate, request,
-                    db: Session = Depends(get_db), _=Depends(require_staff)):
+def create_campaign(payload: schemas.CampaignCreate, request: Request,
+                    db: Session = Depends(get_db), _=Depends(require_staff())):
     user = _get_current_user(request, db)
     campaign = models.Campaign(**payload.model_dump(), owner_id=user.id)
     db.add(campaign)
@@ -120,13 +120,13 @@ def create_campaign(payload: schemas.CampaignCreate, request,
 
 # ── Escalations ──
 @router.get("/escalations", response_model=list[schemas.EscalationOut])
-def list_escalations(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_escalations(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.Escalation).all()
 
 
 @router.put("/escalations/{esc_id}", response_model=schemas.EscalationOut)
-def resolve_escalation(esc_id: int, payload: schemas.EscalationCreate, request,
-                       db: Session = Depends(get_db), _=Depends(require_staff)):
+def resolve_escalation(esc_id: int, payload: schemas.EscalationCreate, request: Request,
+                       db: Session = Depends(get_db), _=Depends(require_staff())):
     esc = db.get(models.Escalation, esc_id)
     if not esc:
         raise HTTPException(status_code=404, detail="Escalation not found.")
@@ -139,12 +139,12 @@ def resolve_escalation(esc_id: int, payload: schemas.EscalationCreate, request,
 
 # ── Careers ──
 @router.get("/careers/roles", response_model=list[schemas.CareerRoleOut])
-def list_roles_admin(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_roles_admin(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.CareerRole).all()
 
 
 @router.post("/careers/roles", response_model=schemas.CareerRoleOut)
-def create_role(payload: schemas.CareerRoleCreate, request,
+def create_role(payload: schemas.CareerRoleCreate, request: Request,
                 db: Session = Depends(get_db), _=Depends(require_admin)):
     role = models.CareerRole(**payload.model_dump())
     db.add(role)
@@ -154,17 +154,17 @@ def create_role(payload: schemas.CareerRoleCreate, request,
 
 
 @router.get("/careers/applications", response_model=list[schemas.ApplicationOut])
-def list_applications(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_applications(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.Application).all()
 
 
 # ── QA Reviews ──
 @router.get("/qa", response_model=list[schemas.QAReviewOut])
-def list_qa(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_qa(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.QAReview).all()
 
 
-def _get_current_user(request, db: Session) -> models.AdminUser:
+def _get_current_user(request: Request, db: Session) -> models.AdminUser:
     from app.deps import _payload
     payload = _payload(request)
     email = payload.get("sub")

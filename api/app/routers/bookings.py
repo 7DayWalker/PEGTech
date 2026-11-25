@@ -1,7 +1,7 @@
 """
 Booking routes — public bookings, staff manage.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import models
@@ -14,13 +14,13 @@ router = APIRouter(prefix="/api/bookings", tags=["bookings"])
 
 
 @router.get("/", response_model=list[schemas.BookingOut])
-def list_bookings(request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def list_bookings(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.Booking).all()
 
 
 @router.put("/{booking_id}", response_model=schemas.BookingOut)
-def update_booking(booking_id: int, payload: dict, request,
-                   db: Session = Depends(get_db), _=Depends(require_staff)):
+def update_booking(booking_id: int, payload: dict, request: Request,
+                   db: Session = Depends(get_db), _=Depends(require_staff())):
     booking = db.get(models.Booking, booking_id)
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found.")

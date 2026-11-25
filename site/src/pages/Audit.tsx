@@ -9,6 +9,7 @@ import { Input, Select } from "../components/Input";
 import { Card } from "../components/Card";
 import { Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
+import { GlowBackground } from "../components/GlowBackground";
 import { ArrowRight, TrendingUp, DollarSign } from "lucide-react";
 
 const LEAD_BANDS = ["Under 50", "50 – 150", "150 – 400", "400+"];
@@ -51,8 +52,9 @@ export function Audit() {
   }
 
   return (
-    <div className="flex-1 py-16">
-        <Container>
+    <div className="relative overflow-hidden py-16">
+        <GlowBackground />
+        <Container className="relative">
           {result ? (
             <section className="max-w-3xl mx-auto">
               <div className="text-center mb-12">
@@ -120,7 +122,7 @@ export function Audit() {
             <section className="max-w-2xl mx-auto">
               <SectionHeader>
                 <Badge variant="accent" className="mb-4 inline-block">AI-Powered Diagnostic</Badge>
-                <h1 className="text-balance">AI Revenue-Leak Audit</h1>
+                <h1 className="text-balance"><span className="text-gradient">AI Revenue-Leak Audit</span></h1>
                 <p className="mt-4 text-lg text-gray-400">
                   Answer 5 questions to estimate how much revenue your business is losing
                   to slow response times, poor pipeline, and ad waste.

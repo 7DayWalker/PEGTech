@@ -9,6 +9,7 @@ import { Input, Select } from "../components/Input";
 import { Card, CardHeader, CardTitle, CardDescription } from "../components/Card";
 import { Container } from "../components/Section";
 import { Badge } from "../components/Badge";
+import { GlowBackground } from "../components/GlowBackground";
 import { Calendar } from "lucide-react";
 
 const SLOTS = ["09:00", "10:30", "12:00", "13:30", "15:00", "16:30"];
@@ -58,8 +59,9 @@ export function Book() {
   }
 
   return (
-    <div className="flex-1 py-16">
-        <Container>
+    <div className="relative overflow-hidden py-16">
+        <GlowBackground />
+        <Container className="relative">
           <section className="max-w-xl mx-auto">
             <div className="text-center mb-12">
               <Badge variant="accent" className="mb-4 inline-block">Schedule a Consultation</Badge>

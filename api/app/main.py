@@ -3,7 +3,7 @@ PEGTech — FastAPI backend for client-services agency platform.
 """
 import os
 from urllib.parse import urlparse
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -101,6 +101,7 @@ def version():
 @app.get("/api/health")
 def health():
     return {"ok": True, "service": "pegtech-api"}
+
 
 
 _all_routers = [*_routers]

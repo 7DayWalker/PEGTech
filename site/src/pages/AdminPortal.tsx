@@ -6,6 +6,7 @@ import { api } from "../lib/api";
 import { Card } from "../components/Card";
 import { Container } from "../components/Section";
 import { Badge } from "../components/Badge";
+import { GlowBackground } from "../components/GlowBackground";
 import { Users, Folder, Mail, BarChart3, AlertTriangle } from "lucide-react";
 
 export function AdminPortal() {
@@ -16,9 +17,22 @@ export function AdminPortal() {
 
   useEffect(() => {
     api.get("/api/admin/stats").then(async (res) => {
-      if (res.ok) setStats(await res.json());
+      if (res.ok) {
+        setStats(await res.json());
+      } else {
+        let detail = "";
+        try {
+          detail = JSON.stringify(await res.json());
+        } catch {
+          detail = await res.text().catch(() => "");
+        }
+        // eslint-disable-next-line no-console
+        console.error(`[AdminPortal] /api/admin/stats failed: ${res.status} ${detail}`);
+      }
       setLoading(false);
-    }).catch(() => {
+    }).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error("[AdminPortal] /api/admin/stats network error:", err);
       navigate("/signin");
       setLoading(false);
     });
@@ -38,13 +52,14 @@ export function AdminPortal() {
   }
 
   return (
-    <div className="flex-1 py-8 px-4">
-        <Container>
+    <div className="relative overflow-hidden py-8 px-4">
+        <GlowBackground />
+        <Container className="relative">
           <div className="flex justify-between items-start mb-8">
             <div>
               <Badge variant="accent" className="mb-3 inline-block">Staff Dashboard</Badge>
               <h1 className="text-2xl font-bold text-white mb-1">
-                Admin Portal
+                <span className="text-gradient">Admin Portal</span>
               </h1>
               <p className="text-gray-400">Manage your agency operations</p>
             </div>

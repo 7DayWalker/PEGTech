@@ -4,6 +4,7 @@ import { useTitle } from "../lib/useTitle";
 import { Card } from "../components/Card";
 import { Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
+import { GlowBackground } from "../components/GlowBackground";
 import { ArrowRight, Globe, Smartphone, Cpu, Megaphone, Palette } from "lucide-react";
 import caseEcommerce from "../assets/case-ecommerce.png";
 import caseLogistics from "../assets/case-logistics.png";
@@ -73,21 +74,24 @@ export function Work() {
   useTitle("Our Work — PEGTech");
 
   return (
-    <div className="flex-1 py-24">
-        <Container>
+    <div className="relative overflow-hidden py-24">
+        <GlowBackground />
+        <Container className="relative">
           <SectionHeader>
-            <Badge variant="accent" className="mb-4 inline-block">Case Studies</Badge>
-            <h1 className="text-balance">Our Work</h1>
-            <p className="mt-4 text-lg text-gray-400">
+            <Badge variant="accent" className="mb-4 inline-block reveal-up" style={{ animationDelay: "0.1s" }}>Case Studies</Badge>
+            <h1 className="text-balance reveal-up" style={{ animationDelay: "0.2s" }}>
+              <span className="text-gradient">Our Work</span>
+            </h1>
+            <p className="mt-4 text-lg text-gray-400 reveal-up" style={{ animationDelay: "0.3s" }}>
               Real projects for real businesses across Nigeria, UK, Canada, and beyond.
             </p>
           </SectionHeader>
 
           <div className="mt-16 grid md:grid-cols-3 gap-6">
-            {PROJECTS.map((p) => {
+            {PROJECTS.map((p, i) => {
               const Icon = p.icon;
               return (
-                <Card key={p.title} hover padding="none" className="overflow-hidden group">
+                <Card key={p.title} hover padding="none" className="overflow-hidden group reveal-up" style={{ animationDelay: `${0.1 + i * 0.08}s` }}>
                   <div className="h-56 bg-dark-700 overflow-hidden">
                     <img
                       src={p.image}

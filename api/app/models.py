@@ -81,6 +81,9 @@ class Client(Base):
     messages = relationship("ClientMessage", back_populates="client", cascade="all, delete-orphan")
     escalations = relationship("Escalation", back_populates="client", cascade="all, delete-orphan")
     qa_reviews = relationship("QAReview", back_populates="client", cascade="all, delete-orphan")
+    strategist = relationship("AdminUser", foreign_keys=[strategist_id])
+    delivery_lead = relationship("AdminUser", foreign_keys=[delivery_lead_id])
+    success_lead = relationship("AdminUser", foreign_keys=[success_lead_id])
 
 
 class Project(Base):
@@ -141,6 +144,20 @@ class WeeklyUpdate(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     client = relationship("Client", back_populates="weekly_updates")
+
+
+class ClientMessage(Base):
+    """Messages exchanged between staff and a client (dashboard inbox thread)."""
+    __tablename__ = "client_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    client_id: Mapped[int] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), nullable=False, index=True)
+    sender: Mapped[str] = mapped_column(String(20), default="staff")  # staff, client
+    author: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    client = relationship("Client", back_populates="messages")
 
 
 # ---------------------------------------------------------------------------

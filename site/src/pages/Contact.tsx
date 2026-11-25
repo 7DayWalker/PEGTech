@@ -9,6 +9,7 @@ import { Input, Textarea, Select } from "../components/Input";
 import { Card } from "../components/Card";
 import { Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
+import { GlowBackground } from "../components/GlowBackground";
 import { Mail, Phone, Globe } from "lucide-react";
 
 const SERVICES = [
@@ -57,8 +58,9 @@ export function Contact() {
   }
 
   return (
-    <div className="flex-1 py-24">
-        <Container>
+    <div className="relative overflow-hidden py-24">
+        <GlowBackground />
+        <Container className="relative">
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Contact Info */}
             <section>

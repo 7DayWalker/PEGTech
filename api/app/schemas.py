@@ -84,12 +84,30 @@ class ClientUpdate(BaseModel):
     start_date: Optional[date] = None
 
 
+class ClientUserMiniOut(BaseModel):
+    id: int
+    name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class AdminUserMiniOut(BaseModel):
+    id: int
+    name: Optional[str] = None
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
 class ClientOut(ClientBase):
     id: int
-    users: List[dict] = []
-    strategist: Optional[dict] = None
-    delivery_lead: Optional[dict] = None
-    success_lead: Optional[dict] = None
+    users: List[ClientUserMiniOut] = []
+    strategist: Optional[AdminUserMiniOut] = None
+    delivery_lead: Optional[AdminUserMiniOut] = None
+    success_lead: Optional[AdminUserMiniOut] = None
     created_at: datetime
     updated_at: datetime
 

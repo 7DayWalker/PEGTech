@@ -1,25 +1,91 @@
 /**
  * API client for PEGTech frontend.
- * Uses fetch with automatic JWT from HttpOnly cookie (set by /api/auth/login).
+ *
+ * Auth token storage, in order of reliability:
+ *  1. An in-memory module variable — a plain JS variable has no dependency
+ *     on browser storage/cookie permissions at all. It survives for as
+ *     long as this JS execution context is alive, which covers the normal
+ *     SPA flow (login -> client-side route change to /admin, no full page
+ *     reload). This is the PRIMARY store and what the app actually relies
+ *     on inside a sandboxed/third-party preview iframe.
+ *  2. localStorage — a best-effort secondary store so a hard page reload
+ *     (typing the URL, hitting refresh) still restores the session when
+ *     storage access is actually available (real browsers, production).
+ *     In a sandboxed iframe with an opaque origin (no `allow-same-origin`),
+ *     *all* storage AND cookies are unavailable or silently no-op — that's
+ *     exactly the scenario the in-memory variable above is there to cover.
+ *  3. HttpOnly session cookie (set by /api/auth/login) — extra belt & braces
+ *    for same-origin production deployments (Railway serves frontend + API
+ *    from one origin, so cookies work normally there).
+ *
+ * Transport: the token is sent as a custom `X-Pegtech-Auth` header (NOT the
+ * standard `Authorization` header). Some reverse-proxy layers in front of
+ * this app — notably sandboxed live-preview hosting — strip standard
+ * `Authorization` and `Cookie` headers from every request outright, before
+ * they ever reach this server, regardless of their value. A custom header
+ * name is left untouched by that layer, so it's the one actually relied on
+ * here; `Authorization` is still sent too as a harmless bonus for plain
+ * same-origin production deployments that don't sit behind such a proxy.
  */
 const API_BASE = (import.meta as any).env.VITE_API_URL || ""
+const TOKEN_KEY = "pegtech_token"
+
+let memoryToken: string | null = (() => {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+})()
+
+export function setAuthToken(token: string) {
+  memoryToken = token
+  try {
+    localStorage.setItem(TOKEN_KEY, token)
+  } catch {
+    // storage blocked (opaque-origin sandboxed iframe, private mode, etc.) —
+    // the in-memory copy above is what actually keeps the session alive here
+  }
+}
+
+export function clearAuthToken() {
+  memoryToken = null
+  try {
+    localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    // ignore
+  }
+}
+
+function getAuthToken(): string | null {
+  return memoryToken
+}
 
 async function request(
   input: RequestInfo | URL,
   init?: RequestInit,
 ): Promise<Response> {
+  const token = getAuthToken()
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...(token
+      ? { "X-Pegtech-Auth": token, Authorization: `Bearer ${token}` }
+      : {}),
     ...(init?.headers as Record<string, string> || {}),
   }
 
   const res = await fetch(`${API_BASE}${input}`, {
     ...init,
     headers,
-    credentials: "include", // send HttpOnly cookie
+    credentials: "include", // also send HttpOnly cookie when available
   })
 
   if (res.status === 401) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `[api] 401 on ${String(input)} — had token: ${Boolean(token)}, memoryToken set: ${memoryToken !== null}`,
+    )
+    clearAuthToken()
     window.location.href = "/signin"
   }
 

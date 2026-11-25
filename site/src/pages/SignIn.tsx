@@ -2,10 +2,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTitle } from "../lib/useTitle";
-import { api } from "../lib/api";
+import { api, setAuthToken } from "../lib/api";
 import { useToast } from "../lib/Toast";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
+import { GlowBackground } from "../components/GlowBackground";
 import { Mail, Lock, LogIn } from "lucide-react";
 
 export function SignIn() {
@@ -29,6 +30,11 @@ export function SignIn() {
       });
       if (res.ok) {
         const data = await res.json();
+        if (data.access_token) {
+          setAuthToken(data.access_token);
+        }
+        // eslint-disable-next-line no-console
+        console.log(`[SignIn] login ok, typ=${data.typ}, got token: ${Boolean(data.access_token)}`);
         if (data.typ === "staff") {
           navigate("/admin");
         } else {
@@ -46,12 +52,13 @@ export function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-900 px-4">
-      <Card padding="none" className="w-full max-w-md shadow-2xl shadow-blue-500/5">
+    <div className="relative overflow-hidden min-h-screen flex items-center justify-center bg-dark-900 px-4">
+      <GlowBackground />
+      <Card padding="none" className="relative w-full max-w-md shadow-2xl shadow-accent/10 glass-card border-white/15">
         <div className="p-8">
           <div className="text-center mb-8">
             <div className="flex items-center gap-2 font-bold text-xl tracking-tight justify-center text-white">
-              <span className="text-gemini-purple">P</span>EG<span className="text-white">Tech</span>
+              <span className="text-gradient">PEGTech</span>
             </div>
             <p className="text-gray-400 text-sm mt-2">
               Sign in to your account

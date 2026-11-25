@@ -4,7 +4,26 @@ import { useTitle } from "../lib/useTitle";
 import { Card } from "../components/Card";
 import { Section, Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
-import { ArrowRight, Users, ShieldCheck, Clock, Globe } from "lucide-react";
+import { GlowBackground } from "../components/GlowBackground";
+import { ArrowRight, Users, ShieldCheck, Clock, Globe, Star } from "lucide-react";
+
+const TESTIMONIALS = [
+  {
+    quote: "PEGTech rebuilt our ordering flow around WhatsApp and our online sales jumped almost overnight. They actually understood how our customers shop.",
+    name: "Adaeze Nwosu",
+    role: "Founder, Lagos Retail Chain",
+  },
+  {
+    quote: "The AI lead scoring alone paid for the whole engagement. Our sales team finally knows who to call first.",
+    name: "James Okonkwo",
+    role: "Growth Lead, Nigerian Marketing Agency",
+  },
+  {
+    quote: "Responsive, senior, and genuinely invested in our roadmap — exactly what we needed as a remote-first team in the UK.",
+    name: "Sarah Whitfield",
+    role: "Operations Director, UK Consultancy",
+  },
+];
 
 export function About() {
   useTitle("About — PEGTech");
@@ -33,13 +52,16 @@ export function About() {
   ];
 
   return (
-    <div className="flex-1 py-24">
-        <Container>
+    <div className="relative overflow-hidden py-24">
+        <GlowBackground variant="hero" />
+        <Container className="relative">
           {/* Hero */}
           <section className="text-center mb-24">
-            <Badge variant="accent" className="mb-4 inline-block">About Us</Badge>
-            <h1 className="text-balance">Who We Are</h1>
-            <p className="mt-6 text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            <Badge variant="accent" className="mb-4 inline-block reveal-up" style={{ animationDelay: "0.1s" }}>About Us</Badge>
+            <h1 className="text-balance reveal-up" style={{ animationDelay: "0.2s" }}>
+              <span className="text-gradient">Who We Are</span>
+            </h1>
+            <p className="mt-6 text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed reveal-up" style={{ animationDelay: "0.3s" }}>
               PEGTech is a digital agency that helps businesses in Nigeria and around
               the world build web applications, mobile apps, AI solutions, and digital
               marketing campaigns that drive real growth.
@@ -107,6 +129,38 @@ export function About() {
               </div>
             </Container>
           </Section>
+
+          {/* Testimonials */}
+          <section className="py-24">
+            <SectionHeader>
+              <Badge variant="accent" className="mb-4 inline-block">What Clients Say</Badge>
+              <h2 className="text-balance">Trusted by growing businesses</h2>
+            </SectionHeader>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {TESTIMONIALS.map((t, i) => (
+                <Card
+                  key={t.name}
+                  padding="lg"
+                  className="reveal-up"
+                  style={{ animationDelay: `${0.1 + i * 0.1}s` }}
+                >
+                  <div className="flex gap-1 mb-4 text-gemini-blue">
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <Star key={idx} size={16} fill="currentColor" />
+                    ))}
+                  </div>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-6">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <div className="border-t border-white/10 pt-4">
+                    <p className="text-sm font-bold text-white">{t.name}</p>
+                    <p className="text-xs text-gray-500">{t.role}</p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
 
           {/* CTA */}
           <section className="py-24">

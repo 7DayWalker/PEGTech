@@ -1,7 +1,7 @@
 """
 Project routes — staff manage projects, clients view theirs.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app import models
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
 @router.get("/{project_id}", response_model=schemas.ProjectOut)
-def get_project(project_id: int, request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def get_project(project_id: int, request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     project = db.get(models.Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
@@ -20,8 +20,8 @@ def get_project(project_id: int, request, db: Session = Depends(get_db), _=Depen
 
 
 @router.put("/{project_id}", response_model=schemas.ProjectOut)
-def update_project(project_id: int, payload: schemas.ProjectUpdate, request,
-                   db: Session = Depends(get_db), _=Depends(require_staff)):
+def update_project(project_id: int, payload: schemas.ProjectUpdate, request: Request,
+                   db: Session = Depends(get_db), _=Depends(require_staff())):
     project = db.get(models.Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
@@ -33,7 +33,7 @@ def update_project(project_id: int, payload: schemas.ProjectUpdate, request,
 
 
 @router.delete("/{project_id}")
-def delete_project(project_id: int, request, db: Session = Depends(get_db), _=Depends(require_staff)):
+def delete_project(project_id: int, request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     project = db.get(models.Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
