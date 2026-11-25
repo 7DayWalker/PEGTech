@@ -62,11 +62,11 @@ export function Book() {
         <Container>
           <section className="max-w-xl mx-auto">
             <div className="text-center mb-12">
-              <Badge className="mb-4 inline-block blue">Schedule a Consultation</Badge>
-              <h1 className="text-3xl font-bold text-slate-100 mb-4">
+              <Badge variant="accent" className="mb-4 inline-block">Schedule a Consultation</Badge>
+              <h1 className="text-3xl font-bold text-white mb-4">
                 Book a Discovery Call
               </h1>
-              <p className="text-slate-400">
+              <p className="text-gray-400">
                 Schedule a 30-minute discovery call with our team. We'll discuss your
                 project needs and how we can help you grow.
               </p>
@@ -75,7 +75,7 @@ export function Book() {
             <Card padding="lg" className="max-w-md mx-auto">
               <CardHeader className="mb-6">
                 <div className="flex items-center gap-2 mb-2">
-                  <Calendar size={20} className="text-blue-400" />
+                  <Calendar size={20} className="text-gemini-blue" />
                   <CardTitle>Booking Form</CardTitle>
                 </div>
                 <CardDescription>

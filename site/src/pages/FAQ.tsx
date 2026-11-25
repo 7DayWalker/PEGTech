@@ -59,9 +59,9 @@ export function FAQ() {
     <div className="flex-1 py-24">
         <Container>
           <SectionHeader>
-            <Badge className="mb-4 inline-block blue">Frequently Asked Questions</Badge>
+            <Badge variant="accent" className="mb-4 inline-block">Frequently Asked Questions</Badge>
             <h1 className="text-balance">FAQ</h1>
-            <p className="mt-4 text-lg text-slate-400 max-w-2xl">
+            <p className="mt-4 text-lg text-gray-400 max-w-2xl">
               Everything you need to know about working with PEGTech.
             </p>
           </SectionHeader>
@@ -72,17 +72,17 @@ export function FAQ() {
               return (
                 <Card key={faq.q} hover padding="md" className="group cursor-pointer" onClick={() => toggle(faq.q)}>
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-lg font-bold text-white group-hover:text-gemini-blue transition-colors">
                       {faq.q}
                     </h3>
                     <ChevronDown
                       size={20}
-                      className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""} text-slate-400 group-hover:text-blue-400`}
+                      className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""} text-gray-400 group-hover:text-gemini-blue`}
                     />
                   </div>
                   {isOpen && (
-                    <div className="mt-4 pt-4 border-t border-border/50">
-                      <p className="text-slate-400 text-sm leading-relaxed">{faq.a}</p>
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <p className="text-gray-400 text-sm leading-relaxed">{faq.a}</p>
                     </div>
                   )}
                 </Card>
@@ -91,8 +91,8 @@ export function FAQ() {
           </div>
 
           <div className="mt-20 text-center">
-            <Badge className="mb-4 inline-block blue">Still have questions?</Badge>
-            <h2 className="text-2xl font-bold text-slate-100 mb-6">
+            <Badge variant="accent" className="mb-4 inline-block">Still have questions?</Badge>
+            <h2 className="text-2xl font-bold text-white mb-6">
               Let's talk directly
             </h2>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

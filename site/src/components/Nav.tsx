@@ -1,130 +1,95 @@
-/** Top navigation — marketing site style. */
+/** Floating frosted-glass pill navigation bar. */
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, LogOut } from "lucide-react";
-import { api } from "../lib/api";
+import { Menu, X } from "lucide-react";
+import logoMark from "../assets/brand/pegtech-icon-mark.png";
 
 export function Nav() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-
-  async function handleLogout() {
-    try {
-      await api.post("/api/auth/logout");
-    } catch {
-      // ignore
-    }
-    window.location.href = "/";
-  }
-
   const isAuthPage = location.pathname.startsWith("/signin") || location.pathname === "/signup";
 
+  const links = [
+    { to: "/", label: "Home" },
+    { to: "/services", label: "Services" },
+    { to: "/work", label: "Work" },
+    { to: "/about", label: "About" },
+    { to: "/contact", label: "Contact" },
+  ];
+
   return (
-    <nav className="sticky top-0 z-50 border-b border-border/50 bg-dark-900/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <Link
-            to="/"
-            className="flex items-center gap-2 font-bold text-xl tracking-tight"
-          >
-            <span className="text-blue-500">P</span>EG<span className="text-white">Tech</span>
+    <div className="sticky top-4 z-50 px-4">
+      <nav className="nav-pill max-w-5xl mx-auto">
+        <div className="flex items-center justify-between h-16 px-4 sm:px-6">
+          <Link to="/" className="flex items-center gap-2 font-bold text-lg tracking-tight shrink-0">
+            <img src={logoMark} alt="PEGTech" className="h-8 w-8 object-contain" />
+            <span>PEG<span className="text-gradient">Tech</span></span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-6 text-sm font-medium">
-            <Link to="/" className="text-slate-400 hover:text-white transition-colors">
-              Home
-            </Link>
-            <Link to="/services" className="text-slate-400 hover:text-white transition-colors">
-              Services
-            </Link>
-            <Link to="/work" className="text-slate-400 hover:text-white transition-colors">
-              Work
-            </Link>
-            <Link to="/about" className="text-slate-400 hover:text-white transition-colors">
-              About
-            </Link>
-            <Link to="/contact" className="text-slate-400 hover:text-white transition-colors">
-              Contact
-            </Link>
+          <div className="hidden md:flex items-center gap-1 text-sm font-medium">
+            {links.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className={`px-4 py-2 rounded-full transition-colors ${
+                  location.pathname === l.to
+                    ? "text-white bg-white/10"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {!isAuthPage && (
-              <div className="hidden md:flex items-center gap-4 text-sm">
-                <button
-                  onClick={handleLogout}
-                  className="text-slate-400 hover:text-white transition-colors flex items-center gap-2"
-                >
-                  <LogOut size={16} /> Sign out
-                </button>
-              </div>
+              <Link to="/signin" className="hidden md:block text-sm text-slate-400 hover:text-white transition-colors">
+                Sign in
+              </Link>
             )}
-            <Link to="/book" className="btn-primary text-xs px-3 py-1.5 hidden md:block">
+            <Link to="/book" className="btn-primary text-xs px-4 py-2 hidden md:inline-flex">
               Book a Call
             </Link>
             <button
               onClick={() => setOpen(!open)}
-              className="md:hidden text-slate-400"
+              className="md:hidden text-slate-300"
               aria-label="Open menu"
             >
-              {open ? <X size={24} /> : <Menu size={24} />}
+              {open ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
 
         {open && (
-          <div className="md:hidden bg-dark-800 border-t border-border/50 p-4 space-y-3">
-            <Link
-              to="/"
-              className="block px-3 py-2 text-slate-400 hover:text-white transition-colors rounded-lg"
-              onClick={() => setOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              to="/services"
-              className="block px-3 py-2 text-slate-400 hover:text-white transition-colors rounded-lg"
-              onClick={() => setOpen(false)}
-            >
-              Services
-            </Link>
-            <Link
-              to="/work"
-              className="block px-3 py-2 text-slate-400 hover:text-white transition-colors rounded-lg"
-              onClick={() => setOpen(false)}
-            >
-              Work
-            </Link>
-            <Link
-              to="/about"
-              className="block px-3 py-2 text-slate-400 hover:text-white transition-colors rounded-lg"
-              onClick={() => setOpen(false)}
-            >
-              About
-            </Link>
-            <Link
-              to="/contact"
-              className="block px-3 py-2 text-slate-400 hover:text-white transition-colors rounded-lg"
-              onClick={() => setOpen(false)}
-            >
-              Contact
-            </Link>
+          <div className="md:hidden border-t border-white/10 p-4 space-y-1">
+            {links.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className="block px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                onClick={() => setOpen(false)}
+              >
+                {l.label}
+              </Link>
+            ))}
             <Link
               to="/book"
-              className="block px-3 py-2 bg-blue-600 text-white rounded-xl text-center font-medium hover:bg-blue-500 transition-colors"
+              className="block mt-2 px-4 py-2.5 bg-gemini-gradient text-white rounded-xl text-center font-semibold"
               onClick={() => setOpen(false)}
             >
               Book a Call
             </Link>
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-3 py-2 text-slate-400 hover:text-white transition-colors flex items-center gap-2 rounded-lg"
+            <Link
+              to="/signin"
+              className="block px-4 py-2.5 text-slate-400 hover:text-white text-center transition-colors"
+              onClick={() => setOpen(false)}
             >
-              <LogOut size={16} /> Sign out
-            </button>
+              Sign in
+            </Link>
           </div>
         )}
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }

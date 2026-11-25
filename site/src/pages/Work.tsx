@@ -5,6 +5,12 @@ import { Card } from "../components/Card";
 import { Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
 import { ArrowRight, Globe, Smartphone, Cpu, Megaphone, Palette } from "lucide-react";
+import caseEcommerce from "../assets/case-ecommerce.png";
+import caseLogistics from "../assets/case-logistics.png";
+import caseAiLeads from "../assets/case-ai-leads.png";
+import caseMarketing from "../assets/case-marketing.png";
+import caseBranding from "../assets/case-branding.png";
+import caseCrm from "../assets/case-crm.png";
 
 const PROJECTS = [
   {
@@ -13,7 +19,7 @@ const PROJECTS = [
     client: "Retail • Nigeria",
     description: "Full-stack online store with inventory management, WhatsApp ordering, and payment integration.",
     result: "40% increase in online sales",
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?w=800&q=80",
+    image: caseEcommerce,
     icon: Globe,
   },
   {
@@ -22,7 +28,7 @@ const PROJECTS = [
     client: "Logistics • Nigeria",
     description: "Mobile app for real-time vehicle tracking, driver dispatch, and maintenance scheduling.",
     result: "25% reduction in fuel costs",
-    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80",
+    image: caseLogistics,
     icon: Smartphone,
   },
   {
@@ -31,7 +37,7 @@ const PROJECTS = [
     client: "Marketing • Nigeria",
     description: "AI system that scores and routes inbound leads to sales reps based on engagement and intent.",
     result: "3x faster lead response",
-    image: "https://images.unsplash.com/photo-1460925895917-af663827772d?w=800&q=80",
+    image: caseAiLeads,
     icon: Cpu,
   },
   {
@@ -40,7 +46,7 @@ const PROJECTS = [
     client: "Consulting • UK",
     description: "SEO and content strategy that doubled organic traffic in 6 months.",
     result: "2x organic traffic",
-    image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&q=80",
+    image: caseMarketing,
     icon: Megaphone,
   },
   {
@@ -49,7 +55,7 @@ const PROJECTS = [
     client: "Design • Canada",
     description: "Complete brand identity redesign including logo, guidelines, and website.",
     result: "New brand launched",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80",
+    image: caseBranding,
     icon: Palette,
   },
   {
@@ -58,7 +64,7 @@ const PROJECTS = [
     client: "Non-profit • Ghana",
     description: "Digital transformation strategy and CRM implementation for donor management.",
     result: "50% time saved on admin",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+    image: caseCrm,
     icon: Cpu,
   },
 ];
@@ -70,9 +76,9 @@ export function Work() {
     <div className="flex-1 py-24">
         <Container>
           <SectionHeader>
-            <Badge className="mb-4 inline-block blue">Case Studies</Badge>
+            <Badge variant="accent" className="mb-4 inline-block">Case Studies</Badge>
             <h1 className="text-balance">Our Work</h1>
-            <p className="mt-4 text-lg text-slate-400">
+            <p className="mt-4 text-lg text-gray-400">
               Real projects for real businesses across Nigeria, UK, Canada, and beyond.
             </p>
           </SectionHeader>
@@ -82,7 +88,7 @@ export function Work() {
               const Icon = p.icon;
               return (
                 <Card key={p.title} hover padding="none" className="overflow-hidden group">
-                  <div className="h-56 bg-slate-800 overflow-hidden">
+                  <div className="h-56 bg-dark-700 overflow-hidden">
                     <img
                       src={p.image}
                       alt={p.title}
@@ -91,21 +97,21 @@ export function Work() {
                   </div>
                   <div className="p-6">
                     <div className="flex items-start gap-3 mb-3">
-                      <Icon size={20} className="text-blue-400 mt-0.5" />
-                      <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                      <Icon size={20} className="text-gemini-blue mt-0.5" />
+                      <span className="text-xs font-bold text-gemini-blue uppercase tracking-wider">
                         {p.category}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-gemini-blue transition-colors">
                       {p.title}
                     </h3>
-                    <p className="text-sm text-slate-400 mb-4">{p.client}</p>
-                    <p className="text-sm text-slate-400 mb-6">{p.description}</p>
+                    <p className="text-sm text-gray-400 mb-4">{p.client}</p>
+                    <p className="text-sm text-gray-400 mb-6">{p.description}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-blue-400 font-semibold text-sm">{p.result}</span>
+                      <span className="text-gemini-blue font-semibold text-sm">{p.result}</span>
                       <Link
                         to="/contact"
-                        className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
+                        className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
                       >
                         Discuss similar project <ArrowRight size={16} />
                       </Link>

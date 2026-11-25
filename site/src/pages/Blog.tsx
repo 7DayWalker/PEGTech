@@ -46,9 +46,9 @@ export function Blog() {
     <div className="flex-1 py-24">
         <Container>
           <SectionHeader>
-            <Badge className="mb-4 inline-block blue">Insights</Badge>
+            <Badge variant="accent" className="mb-4 inline-block">Insights</Badge>
             <h1 className="text-balance">Blog</h1>
-            <p className="mt-4 text-lg text-slate-400 max-w-2xl">
+            <p className="mt-4 text-lg text-gray-400 max-w-2xl">
               Thought leadership on digital transformation, AI, and growing your
               business online.
             </p>
@@ -57,11 +57,11 @@ export function Blog() {
           <div className="mt-16 grid md:grid-cols-3 gap-6">
             {ARTICLES.map((article) => (
               <Card key={article.title} hover padding="lg" className="group">
-                <Badge className="mb-4 inline-block blue">{article.category}</Badge>
-                <h3 className="text-xl font-bold text-slate-100 mb-3 group-hover:text-blue-400 transition-colors">
+                <Badge variant="accent" className="mb-4 inline-block">{article.category}</Badge>
+                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-gemini-blue transition-colors">
                   {article.title}
                 </h3>
-                <p className="text-slate-400 text-sm mb-6">{article.excerpt}</p>
+                <p className="text-gray-400 text-sm mb-6">{article.excerpt}</p>
                 <div className="flex items-center justify-between text-xs text-slate-500">
                   <div className="flex items-center gap-2">
                     <Clock size={14} className="text-slate-500" />
@@ -71,7 +71,7 @@ export function Blog() {
                 </div>
                 <Link
                   to="/blog"
-                  className="mt-6 inline-flex items-center gap-1 text-blue-400 text-sm font-medium hover:underline group-hover:text-blue-300 transition-colors"
+                  className="mt-6 inline-flex items-center gap-1 text-gemini-blue text-sm font-medium hover:underline group-hover:text-gemini-pink transition-colors"
                 >
                   Read article <ArrowRight size={16} />
                 </Link>
@@ -80,11 +80,11 @@ export function Blog() {
           </div>
 
           <div className="mt-20 text-center">
-            <Badge className="mb-4 inline-block blue">Want insights delivered to your inbox?</Badge>
-            <h2 className="text-2xl font-bold text-slate-100 mb-6">
+            <Badge variant="accent" className="mb-4 inline-block">Want insights delivered to your inbox?</Badge>
+            <h2 className="text-2xl font-bold text-white mb-6">
               Subscribe to our newsletter
             </h2>
-            <p className="text-slate-400 mb-8 max-w-lg mx-auto">
+            <p className="text-gray-400 mb-8 max-w-lg mx-auto">
               Get the latest on AI, digital marketing, and growing your business online.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">

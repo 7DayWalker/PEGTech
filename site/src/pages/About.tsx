@@ -37,9 +37,9 @@ export function About() {
         <Container>
           {/* Hero */}
           <section className="text-center mb-24">
-            <Badge className="mb-4 inline-block blue">About Us</Badge>
+            <Badge variant="accent" className="mb-4 inline-block">About Us</Badge>
             <h1 className="text-balance">Who We Are</h1>
-            <p className="mt-6 text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+            <p className="mt-6 text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
               PEGTech is a digital agency that helps businesses in Nigeria and around
               the world build web applications, mobile apps, AI solutions, and digital
               marketing campaigns that drive real growth.
@@ -51,16 +51,16 @@ export function About() {
             <Container>
               <div className="grid md:grid-cols-2 gap-12 items-center">
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-100 mb-6">
+                  <h2 className="text-3xl font-bold text-white mb-6">
                     Helping local businesses compete globally
                   </h2>
-                  <p className="text-slate-400 mb-6 leading-relaxed">
+                  <p className="text-gray-400 mb-6 leading-relaxed">
                     We believe that great digital products shouldn't be reserved for big
                     corporations with massive budgets. Whether you're a retail shop in
                     Lagos, a consultancy in London, or a startup in Nairobi — we build
                     tools that help you grow.
                   </p>
-                  <p className="text-slate-400 mb-8 leading-relaxed">
+                  <p className="text-gray-400 mb-8 leading-relaxed">
                     Our team combines technical expertise with business strategy to
                     deliver projects that don't just look good — they perform.
                   </p>
@@ -73,10 +73,10 @@ export function About() {
                 </div>
                 <Card padding="lg">
                   <div className="flex items-center gap-3 mb-6">
-                    <Users size={24} className="text-blue-400" />
-                    <h3 className="text-xl font-bold text-slate-100">Our Mission</h3>
+                    <Users size={24} className="text-gemini-blue" />
+                    <h3 className="text-xl font-bold text-white">Our Mission</h3>
                   </div>
-                  <p className="text-slate-400 leading-relaxed">
+                  <p className="text-gray-400 leading-relaxed">
                     To be the digital partner of choice for growth-minded businesses
                     in emerging markets — delivering world-class technology at accessible
                     prices.
@@ -90,18 +90,18 @@ export function About() {
           <Section inverse py={32}>
             <Container>
               <SectionHeader>
-                <Badge className="mb-4 inline-block blue">Our Values</Badge>
+                <Badge variant="accent" className="mb-4 inline-block">Our Values</Badge>
                 <h2 className="text-balance">What guides us</h2>
               </SectionHeader>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {values.map((v) => (
                   <Card key={v.title} padding="lg" className="text-center">
-                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mx-auto mb-5">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gemini-blue/20 via-gemini-purple/20 to-gemini-pink/20 flex items-center justify-center text-gemini-purple mx-auto mb-5">
                       <v.icon size={24} />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-100 mb-3">{v.title}</h3>
-                    <p className="text-sm text-slate-400">{v.desc}</p>
+                    <h3 className="text-lg font-bold text-white mb-3">{v.title}</h3>
+                    <p className="text-sm text-gray-400">{v.desc}</p>
                   </Card>
                 ))}
               </div>
@@ -111,11 +111,11 @@ export function About() {
           {/* CTA */}
           <section className="py-24">
             <Container>
-              <Card className="rounded-3xl border-blue-500/30 bg-gradient-to-br from-dark-800 to-dark-900 p-12 text-center shadow-2xl shadow-blue-500/10">
-                <h2 className="text-3xl font-bold text-slate-100 mb-4">
+              <Card className="glass-card border-white/15 p-12 text-center shadow-2xl shadow-gemini-purple/10">
+                <h2 className="text-3xl font-bold text-white mb-4">
                   Let's build something great together
                 </h2>
-                <p className="text-slate-400 mb-8 max-w-lg mx-auto">
+                <p className="text-gray-400 mb-8 max-w-lg mx-auto">
                   Tell us about your project and we'll get back to you within 24 hours.
                 </p>
                 <Link

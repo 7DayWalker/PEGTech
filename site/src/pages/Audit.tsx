@@ -59,10 +59,10 @@ export function Audit() {
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 mb-4">
                   <TrendingUp size={16} /> Audit Complete
                 </div>
-                <h1 className="text-3xl font-bold text-slate-100 mb-4">
+                <h1 className="text-3xl font-bold text-white mb-4">
                   Your Revenue-Leak Report
                 </h1>
-                <p className="text-slate-400">
+                <p className="text-gray-400">
                   Based on your inputs, here's your estimated monthly revenue leak.
                 </p>
               </div>
@@ -81,7 +81,7 @@ export function Audit() {
                         <div className="text-2xl font-bold text-accent mb-1">
                           {formats[i]}
                         </div>
-                        <div className="text-sm text-slate-400">{labels[i]}</div>
+                        <div className="text-sm text-gray-400">{labels[i]}</div>
                       </Card>
                     );
                   }
@@ -91,13 +91,13 @@ export function Audit() {
               <div className="space-y-6">
                 <div className="Card p-6 rounded-2xl border border-border bg-dark-800/50">
                   <div className="flex items-start gap-3">
-                    <DollarSign size={24} className="text-blue-400 mt-0.5" />
+                    <DollarSign size={24} className="text-gemini-blue mt-0.5" />
                     <div>
-                      <h3 className="font-bold text-slate-100">Estimated Annual Revenue Leak</h3>
-                      <p className="text-sm text-slate-400">
+                      <h3 className="font-bold text-white">Estimated Annual Revenue Leak</h3>
+                      <p className="text-sm text-gray-400">
                         Based on lead response times, pipeline health, and deal size,
                         your business could be losing approximately{" "}
-                        <span className="text-blue-400 font-bold">
+                        <span className="text-gemini-blue font-bold">
                           ${(result.annual_leak_usd / 1000).toFixed(0)}K per year
                         </span>
                         .
@@ -119,9 +119,9 @@ export function Audit() {
           ) : (
             <section className="max-w-2xl mx-auto">
               <SectionHeader>
-                <Badge className="mb-4 inline-block blue">AI-Powered Diagnostic</Badge>
+                <Badge variant="accent" className="mb-4 inline-block">AI-Powered Diagnostic</Badge>
                 <h1 className="text-balance">AI Revenue-Leak Audit</h1>
-                <p className="mt-4 text-lg text-slate-400">
+                <p className="mt-4 text-lg text-gray-400">
                   Answer 5 questions to estimate how much revenue your business is losing
                   to slow response times, poor pipeline, and ad waste.
                 </p>

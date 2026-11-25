@@ -63,9 +63,9 @@ export function Contact() {
             {/* Contact Info */}
             <section>
               <SectionHeader className="text-left mb-0">
-                <Badge className="mb-4 inline-block blue">Get in Touch</Badge>
-                <h1 className="text-3xl font-bold text-slate-100 mb-4">Contact Us</h1>
-                <p className="text-slate-400">
+                <Badge variant="accent" className="mb-4 inline-block">Get in Touch</Badge>
+                <h1 className="text-3xl font-bold text-white mb-4">Contact Us</h1>
+                <p className="text-gray-400">
                   Have a project in mind? Fill out the form and we'll reach out to
                   discuss how we can help.
                 </p>
@@ -73,24 +73,24 @@ export function Contact() {
 
               <div className="mt-12 space-y-8">
                 <div className="flex items-start gap-4">
-                  <Mail size={24} className="text-blue-400 mt-0.5 shrink-0" />
+                  <Mail size={24} className="text-gemini-blue mt-0.5 shrink-0" />
                   <div>
-                    <h3 className="font-bold text-slate-100">Email</h3>
-                    <p className="text-slate-400 text-sm">hello@pegtech.co</p>
+                    <h3 className="font-bold text-white">Email</h3>
+                    <p className="text-gray-400 text-sm">hello@pegtech.co</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <Phone size={24} className="text-blue-400 mt-0.5 shrink-0" />
+                  <Phone size={24} className="text-gemini-blue mt-0.5 shrink-0" />
                   <div>
-                    <h3 className="font-bold text-slate-100">Phone</h3>
-                    <p className="text-slate-400 text-sm">+234 801 234 5678</p>
+                    <h3 className="font-bold text-white">Phone</h3>
+                    <p className="text-gray-400 text-sm">+234 801 234 5678</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <Globe size={24} className="text-blue-400 mt-0.5 shrink-0" />
+                  <Globe size={24} className="text-gemini-blue mt-0.5 shrink-0" />
                   <div>
-                    <h3 className="font-bold text-slate-100">Location</h3>
-                    <p className="text-slate-400 text-sm">
+                    <h3 className="font-bold text-white">Location</h3>
+                    <p className="text-gray-400 text-sm">
                       Lagos, Nigeria<br />
                       Serving clients worldwide
                     </p>
@@ -105,8 +105,8 @@ export function Contact() {
                   >
                     <span className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-[10px] font-bold text-white shrink-0">WA</span>
                     <div>
-                      <h3 className="font-bold text-slate-100">WhatsApp</h3>
-                      <p className="text-slate-400 text-sm">Meta-verified business</p>
+                      <h3 className="font-bold text-white">WhatsApp</h3>
+                      <p className="text-gray-400 text-sm">Meta-verified business</p>
                     </div>
                   </a>
                 </div>
@@ -116,8 +116,8 @@ export function Contact() {
             {/* Contact Form */}
             <Card padding="lg">
               <SectionHeader className="text-left mb-8">
-                <Badge className="mb-4 inline-block blue">Send a Message</Badge>
-                <h2 className="text-2xl font-bold text-slate-100 mb-2">Tell us about your project</h2>
+                <Badge variant="accent" className="mb-4 inline-block">Send a Message</Badge>
+                <h2 className="text-2xl font-bold text-white mb-2">Tell us about your project</h2>
               </SectionHeader>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">

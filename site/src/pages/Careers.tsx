@@ -78,11 +78,11 @@ export function Careers() {
         <Container>
           <section className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
-              <Badge className="mb-4 inline-block blue">Join Our Team</Badge>
-              <h1 className="text-3xl font-bold text-slate-100 mb-4">
+              <Badge variant="accent" className="mb-4 inline-block">Join Our Team</Badge>
+              <h1 className="text-3xl font-bold text-white mb-4">
                 Careers at PEGTech
               </h1>
-              <p className="text-slate-400">
+              <p className="text-gray-400">
                 We're building the future of client services. Help us shape it.
               </p>
             </div>
@@ -92,15 +92,15 @@ export function Careers() {
                 <Card key={role.id} hover padding="lg" className="group">
                   <CardHeader className="mb-4">
                     <div className="flex items-start gap-3">
-                      <Mail size={20} className="text-blue-400 mt-0.5" />
+                      <Mail size={20} className="text-gemini-blue mt-0.5" />
                       <div>
-                        <h3 className="text-xl font-bold text-slate-100">{role.role}</h3>
-                        <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                        <h3 className="text-xl font-bold text-white">{role.role}</h3>
+                        <span className="text-xs font-bold text-gemini-blue uppercase tracking-wider">
                           {role.meta}
                         </span>
                       </div>
                     </div>
-                    <p className="text-sm text-slate-400 mt-4">{role.blurb}</p>
+                    <p className="text-sm text-gray-400 mt-4">{role.blurb}</p>
                   </CardHeader>
                   <CardContent className="mt-6">
                     <Button
@@ -119,7 +119,7 @@ export function Careers() {
             {form.role_id && (
               <Card padding="lg" className="mt-10">
                 <SectionHeader className="text-left mb-8">
-                  <h2 className="text-2xl font-bold text-slate-100 mb-2">
+                  <h2 className="text-2xl font-bold text-white mb-2">
                     Apply
                   </h2>
                 </SectionHeader>

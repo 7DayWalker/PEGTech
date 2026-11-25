@@ -1,4 +1,4 @@
-/** Shared card component with dark theme styling. */
+/** Shared card component — frosted glass styling. */
 import { forwardRef } from "react";
 
 type CardProps = React.ComponentProps<"div"> & {
@@ -18,7 +18,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={`rounded-2xl border border-border/50 bg-dark-800/50 backdrop-blur-sm shadow-lg transition-all duration-300 ${hover ? "hover:-translate-y-2 hover:border-blue-500/30 hover:shadow-blue-500/10" : "hover:border-slate-600/30"} ${paddingClasses[padding]} ${className || ""}`}
+        className={`rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-2xl transition-all duration-300 ${hover ? "hover:bg-white/[0.07] hover:border-white/20 hover:-translate-y-1" : ""} ${paddingClasses[padding]} ${className || ""}`}
         {...props}
       />
     );
@@ -53,6 +53,6 @@ export function CardContent({ className, ...props }: React.ComponentProps<"div">
 
 export function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div className={`mt-6 pt-6 border-t border-border/50 ${className || ""}`} {...props} />
+    <div className={`mt-6 pt-6 border-t border-white/10 ${className || ""}`} {...props} />
   );
 }

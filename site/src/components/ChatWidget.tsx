@@ -55,14 +55,14 @@ export function ChatWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="bg-blue-600 text-dark-900 rounded-full p-3 shadow-2xl shadow-blue-600/25 hover:bg-blue-500 hover:shadow-blue-600/40 transition-all duration-200 active:scale-95"
+          className="bg-blue-600 text-dark-900 rounded-full p-3 shadow-2xl shadow-gemini-purple/25 hover:bg-blue-500 hover:shadow-gemini-purple/40 transition-all duration-200 active:scale-95"
           aria-label="Open chat"
         >
           <Send size={22} strokeWidth={2.5} />
         </button>
       )}
       {open && (
-        <div className="flex flex-col h-[500px] w-[360px] bg-dark-800 border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex flex-col h-[500px] w-[360px] bg-dark-800 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-blue-600 p-4 flex items-center justify-between">
             <h3 className="text-dark-900 font-semibold flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />{' '}
@@ -82,7 +82,7 @@ export function ChatWidget() {
                 className={`max-w-[85%] p-3 rounded-xl ${
                   m.role === "user"
                     ? "ml-auto bg-blue-600 text-dark-900 rounded-tr-none"
-                    : "mr-auto bg-slate-800 text-slate-300 rounded-tl-none"
+                    : "mr-auto bg-dark-700 text-gray-300 rounded-tl-none"
                 }`}
               >
                 {m.content}
@@ -90,14 +90,14 @@ export function ChatWidget() {
             ))}
             <div ref={endRef} />
           </div>
-          <div className="p-3 border-t border-border/50">
+          <div className="p-3 border-t border-white/10">
             <div className="flex gap-2">
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 placeholder="Type your message..."
-                className="flex-1 rounded-xl border border-input bg-dark-900/50 px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 rounded-xl border border-input bg-dark-900/50 px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <button
                 onClick={sendMessage}

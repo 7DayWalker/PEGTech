@@ -4,6 +4,13 @@ import { useTitle } from "../lib/useTitle";
 import { Card } from "../components/Card";
 import { Section, Container, SectionHeader } from "../components/Section";
 import { Badge } from "../components/Badge";
+import { GlowBackground } from "../components/GlowBackground";
+import { HeroVideoBackground } from "../components/HeroVideoBackground";
+import { BrowserFrame } from "../components/BrowserFrame";
+import productScreenshot from "../assets/product-screenshot-dashboard.png";
+import caseEcommerce from "../assets/case-ecommerce.png";
+import caseLogistics from "../assets/case-logistics.png";
+import caseAiLeads from "../assets/case-ai-leads.png";
 import {
   Globe,
   Smartphone,
@@ -32,21 +39,21 @@ const WORK_ITEMS = [
     title: "Lagos Retail Chain",
     category: "E-commerce Website",
     description: "Full-stack online store with inventory management and WhatsApp ordering.",
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?w=800&q=80",
+    image: caseEcommerce,
     result: "40% increase in online sales",
   },
   {
     title: "Abuja Logistics Firm",
     category: "Fleet Management App",
     description: "Mobile app for real-time vehicle tracking and driver dispatch.",
-    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80",
+    image: caseLogistics,
     result: "25% reduction in fuel costs",
   },
   {
     title: "Nigerian Marketing Agency",
     category: "AI Lead Scoring",
     description: "AI system that scores and routes inbound leads to sales reps.",
-    image: "https://images.unsplash.com/photo-1460925895917-af663827772d?w=800&q=80",
+    image: caseAiLeads,
     result: "3x faster lead response",
   },
 ];
@@ -87,30 +94,32 @@ export function Home() {
   return (
     <div className="relative overflow-hidden">
         {/* Hero */}
-        <section className="relative pt-24 pb-36 lg:pt-32 lg:pb-48 overflow-hidden">
-          <div className="absolute inset-0 grid-pattern pointer-events-none"></div>
-          <Container>
+        <section className="relative pt-16 pb-24 lg:pt-20 lg:pb-32 overflow-hidden">
+          <HeroVideoBackground />
+          <GlowBackground variant="hero" />
+          <Container className="relative">
             <SectionHeader>
-              <Badge className="mb-4 inline-block reveal-up" style={{ animationDelay: "0.1s" }}>
+              <Badge variant="default" className="mb-6 inline-block reveal-up uppercase tracking-widest" style={{ animationDelay: "0.1s" }}>
                 Nigeria-based • WhatsApp-first • Meta-verified
               </Badge>
               <h1 className="text-balance reveal-up" style={{ animationDelay: "0.2s" }}>
-                We build digital products that help{" "}
-                <span className="text-blue-500">local businesses grow.</span>
+                <span className="text-gradient">Build smarter.</span>
+                <br />
+                Grow faster.
               </h1>
-              <p className="mt-6 text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed reveal-up" style={{ animationDelay: "0.3s" }}>
+              <p className="mt-6 text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed reveal-up" style={{ animationDelay: "0.3s" }}>
                 Web applications, mobile apps, AI solutions, and digital marketing — built
                 for businesses in Nigeria and around the world. From first line of code to
                 first paying customer.
               </p>
             </SectionHeader>
 
-            <div className="mt-16 flex flex-col sm:flex-row gap-4 justify-center reveal-up" style={{ animationDelay: "0.4s" }}>
+            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center reveal-up" style={{ animationDelay: "0.4s" }}>
               <Link
                 to="/services"
                 className="btn-primary text-base px-8 py-4 w-full sm:w-auto"
               >
-                View Our Services
+                View Our Services <ArrowRight size={18} />
               </Link>
               <Link
                 to="/book"
@@ -120,11 +129,20 @@ export function Home() {
               </Link>
             </div>
 
+            {/* Product screenshot in browser frame */}
+            <div className="mt-20 max-w-4xl mx-auto reveal-up" style={{ animationDelay: "0.5s" }}>
+              <BrowserFrame
+                src={productScreenshot}
+                alt="PEGTech client dashboard product screenshot"
+                url="app.pegtech.co/dashboard"
+              />
+            </div>
+
             {/* Trust stats */}
-            <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 pt-12 border-t border-border/50">
+            <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 pt-12 border-t border-white/10">
               {STATS.map((s, i) => (
-                <div key={s.label} className="text-center reveal-up" style={{ animationDelay: `${0.5 + i * 0.1}s` }}>
-                  <div className="text-3xl font-bold text-blue-500">{s.value}</div>
+                <div key={s.label} className="text-center reveal-up" style={{ animationDelay: `${0.6 + i * 0.1}s` }}>
+                  <div className="text-3xl font-bold text-gradient">{s.value}</div>
                   <div className="mt-2 text-sm text-slate-500">{s.label}</div>
                 </div>
               ))}
@@ -133,12 +151,12 @@ export function Home() {
         </section>
 
         {/* Services Preview */}
-        <section className="py-24 border-y border-border/50">
+        <section className="py-24 border-y border-white/10">
           <Container>
             <SectionHeader>
               <Badge className="mb-4 inline-block">Our Expertise</Badge>
               <h2 className="text-balance">Everything you need to grow online</h2>
-              <p className="mt-4 text-lg text-slate-400">
+              <p className="mt-4 text-lg text-gray-400">
                 Full-stack digital agency services — web, mobile, AI, marketing, design,
                 and consulting. Built for modern businesses.
               </p>
@@ -156,14 +174,14 @@ export function Home() {
                 const Icon = SERVICE_ICONS[s.name] || Settings;
                 return (
                   <Card key={s.name} hover padding="lg" className="group reveal-up" style={{ animationDelay: `${0.5 + i * 0.1}s` }}>
-                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-6 group-hover:bg-blue-500/20 transition-colors duration-300">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gemini-blue/20 via-gemini-purple/20 to-gemini-pink/20 flex items-center justify-center text-gemini-purple mb-6 group-hover:from-gemini-blue/30 group-hover:via-gemini-purple/30 group-hover:to-gemini-pink/30 transition-colors duration-300">
                       <Icon size={28} />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-100 mb-3">{s.name}</h3>
-                    <p className="text-sm text-slate-400 mb-6">{s.desc}</p>
+                    <h3 className="text-xl font-bold text-white mb-3">{s.name}</h3>
+                    <p className="text-sm text-gray-400 mb-6">{s.desc}</p>
                     <Link
                       to="/services"
-                      className="text-blue-400 text-sm font-medium hover:underline flex items-center gap-1 group-hover:text-blue-300 transition-colors"
+                      className="text-gemini-blue text-sm font-medium hover:underline flex items-center gap-1 group-hover:text-gemini-pink transition-colors"
                     >
                       Learn more <ArrowRight size={16} />
                     </Link>
@@ -180,7 +198,7 @@ export function Home() {
             <SectionHeader className="text-left">
               <Badge className="mb-4 inline-block">AI-First Delivery</Badge>
               <h2 className="text-balance mb-4">AI isn't an add-on — it's built into how we work.</h2>
-              <p className="text-lg text-slate-400">
+              <p className="text-lg text-gray-400">
                 Every project leverages AI for faster delivery, lower costs, and better
                 outcomes for your business.
               </p>
@@ -189,11 +207,11 @@ export function Home() {
             <div className="grid md:grid-cols-4 gap-6">
               {FEATURES.map((f, i) => (
                 <Card key={f.title} padding="lg" className="reveal-up" style={{ animationDelay: `${0.2 + i * 0.1}s` }}>
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-5">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gemini-blue/20 via-gemini-purple/20 to-gemini-pink/20 flex items-center justify-center text-gemini-purple mb-5">
                     <f.icon size={24} />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-100 mb-3">{f.title}</h3>
-                  <p className="text-sm text-slate-400">{f.desc}</p>
+                  <h3 className="text-lg font-bold text-white mb-3">{f.title}</h3>
+                  <p className="text-sm text-gray-400">{f.desc}</p>
                 </Card>
               ))}
             </div>
@@ -206,7 +224,7 @@ export function Home() {
             <SectionHeader>
               <Badge className="mb-4 inline-block">Proven Results</Badge>
               <h2 className="text-balance">Work we're proud of</h2>
-              <p className="mt-4 text-lg text-slate-400">
+              <p className="mt-4 text-lg text-gray-400">
                 Real projects for real businesses across Nigeria and internationally.
               </p>
             </SectionHeader>
@@ -214,7 +232,7 @@ export function Home() {
             <div className="mt-16 grid md:grid-cols-3 gap-6">
               {WORK_ITEMS.map((work, i) => (
                 <Card key={work.title} hover padding="none" className="reveal-up overflow-hidden" style={{ animationDelay: `${0.3 + i * 0.1}s` }}>
-                  <div className="h-48 bg-slate-800 overflow-hidden">
+                  <div className="h-48 bg-dark-700 overflow-hidden">
                     <img
                       src={work.image}
                       alt={work.title}
@@ -222,14 +240,14 @@ export function Home() {
                     />
                   </div>
                   <div className="p-6">
-                    <Badge className="mb-3 inline-block blue">{work.category}</Badge>
-                    <h3 className="text-xl font-bold text-slate-100 mb-2">{work.title}</h3>
-                    <p className="text-sm text-slate-400 mb-6">{work.description}</p>
+                    <Badge variant="accent" className="mb-3 inline-block">{work.category}</Badge>
+                    <h3 className="text-xl font-bold text-white mb-2">{work.title}</h3>
+                    <p className="text-sm text-gray-400 mb-6">{work.description}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-blue-400 font-semibold text-sm">{work.result}</span>
+                      <span className="text-gemini-blue font-semibold text-sm">{work.result}</span>
                       <Link
                         to="/work"
-                        className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
+                        className="text-sm font-medium text-gray-400 hover:text-white transition-colors"
                       >
                         View case study <ArrowRight size={16} />
                       </Link>
@@ -250,11 +268,11 @@ export function Home() {
         {/* CTA */}
         <section className="py-24">
           <Container>
-            <Card className="rounded-3xl border-blue-500/30 bg-gradient-to-br from-dark-800 to-dark-900 p-12 md:p-20 text-center shadow-2xl shadow-blue-500/10">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-100 mb-4">
+            <Card className="glass-card border-white/15 p-12 md:p-20 text-center shadow-2xl shadow-gemini-purple/10">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
                 Ready to grow your business?
               </h2>
-              <p className="text-slate-400 mb-8 max-w-xl mx-auto">
+              <p className="text-gray-400 mb-8 max-w-xl mx-auto">
                 Book a free 30-minute discovery call. We'll review your current setup,
                 identify revenue leaks, and outline a growth plan — no obligation.
               </p>

@@ -82,9 +82,9 @@ export function Services() {
         <section className="py-24">
           <Container>
             <SectionHeader>
-              <Badge className="mb-4 inline-block blue">Our Services</Badge>
+              <Badge variant="accent" className="mb-4 inline-block">Our Services</Badge>
               <h1 className="text-balance">Services</h1>
-              <p className="mt-4 text-lg text-slate-400 max-w-2xl">
+              <p className="mt-4 text-lg text-gray-400 max-w-2xl">
                 Full-stack digital agency services — web, mobile, AI, marketing, design,
                 and consulting. Built for businesses in Nigeria and worldwide.
               </p>
@@ -95,29 +95,29 @@ export function Services() {
                 const Icon = ICON_MAP[s.icon];
                 return (
                   <Card key={s.id} hover padding="lg" className="group">
-                    <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-6 group-hover:bg-blue-500/20 transition-colors duration-300">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gemini-blue/20 via-gemini-purple/20 to-gemini-pink/20 flex items-center justify-center text-gemini-purple mb-6 group-hover:from-gemini-blue/30 group-hover:via-gemini-purple/30 group-hover:to-gemini-pink/30 transition-colors duration-300">
                       <Icon size={28} />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-100 mb-3 group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-xl font-bold text-white mb-3 group-hover:text-gemini-blue transition-colors">
                       {s.name}
                     </h3>
-                    <p className="text-sm text-slate-400 mb-6">{s.desc}</p>
+                    <p className="text-sm text-gray-400 mb-6">{s.desc}</p>
                     <div className="space-y-3 mb-6">
                       {s.features.map((f) => (
-                        <div key={f} className="flex items-center gap-2 text-sm text-slate-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500/20 text-blue-400"></span>
+                        <div key={f} className="flex items-center gap-2 text-sm text-gray-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white/10 text-gemini-blue"></span>
                           {f}
                         </div>
                       ))}
                     </div>
-                    <div className="border-t border-border/50 pt-4">
-                      <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                    <div className="border-t border-white/10 pt-4">
+                      <span className="text-xs font-bold text-gemini-blue uppercase tracking-wider">
                         Starting at {s.startingAt}
                       </span>
                     </div>
                     <Link
                       to={`/services#${s.id}`}
-                      className="mt-4 inline-flex items-center gap-1 text-blue-400 text-sm font-medium hover:underline group-hover:text-blue-300 transition-colors"
+                      className="mt-4 inline-flex items-center gap-1 text-gemini-blue text-sm font-medium hover:underline group-hover:text-gemini-pink transition-colors"
                     >
                       Explore <ArrowRight size={16} />
                     </Link>
@@ -131,11 +131,11 @@ export function Services() {
         {/* CTA */}
         <section className="py-24">
           <Container>
-            <Card className="rounded-3xl border-blue-500/30 bg-gradient-to-br from-dark-800 to-dark-900 p-12 text-center shadow-2xl shadow-blue-500/10">
-              <h2 className="text-3xl font-bold text-slate-100 mb-4">
+            <Card className="glass-card border-white/15 p-12 text-center shadow-2xl shadow-gemini-purple/10">
+              <h2 className="text-3xl font-bold text-white mb-4">
                 Ready to start your project?
               </h2>
-              <p className="text-slate-400 mb-8 max-w-lg mx-auto">
+              <p className="text-gray-400 mb-8 max-w-lg mx-auto">
                 Tell us about your business and we'll recommend the right solution for
                 your goals and budget.
               </p>

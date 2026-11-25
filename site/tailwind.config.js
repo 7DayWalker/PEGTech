@@ -8,24 +8,38 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Dark theme with blue/tech accent
+        // Dark charcoal theme (Google AI Studio inspired)
         dark: {
-          900: "#020617", // near-black
-          800: "#0f172a", // cards
-          700: "#1e293b", // borders
-          600: "#334155", // muted
+          900: "#0a0a0d", // near-black charcoal
+          800: "#131318", // cards
+          700: "#1f1f26", // borders
+          600: "#333340", // muted
         },
         blue: {
           50: "#eff6ff",
           100: "#dbeafe",
-          500: "#3b82f6",
-          600: "#2563eb",
-          900: "#1e3a8a",
+          500: "#2E8CFF",
+          600: "#0B4FD8",
+          900: "#06259A",
+        },
+        // PEGTech official brand palette (from PEGTech Final Logo System)
+        gemini: {
+          blue: "#2E8CFF",
+          purple: "#0B4FD8",
+          pink: "#E00E0E",
+        },
+        brand: {
+          blue: "#2E8CFF",
+          blueMid: "#0B4FD8",
+          blueDeep: "#06259A",
+          red: "#FF5230",
+          redMid: "#E00E0E",
+          redDeep: "#9E0000",
         },
         accent: {
-          DEFAULT: "#3b82f6",
+          DEFAULT: "#2E8CFF",
           foreground: "#ffffff",
-          hover: "#2563eb",
+          hover: "#0B4FD8",
         },
         primary: {
           DEFAULT: "#ffffff",
@@ -63,10 +77,17 @@ export default {
         sans: ["Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
         display: ["Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
       },
+      backgroundImage: {
+        // Exact gradient used in the official PEGTech logo wordmark
+        "gemini-gradient": "linear-gradient(90deg, #2E8CFF 0%, #0B4FD8 55%, #E00E0E 100%)",
+        "gemini-gradient-vertical": "linear-gradient(180deg, #2E8CFF 0%, #0B4FD8 55%, #E00E0E 100%)",
+      },
       animation: {
         "fade-in": "fadeIn 0.8s ease-out forwards",
         "slide-up": "slideUp 0.8s ease-out forwards",
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "float": "float 8s ease-in-out infinite",
+        "float-delayed": "float 10s ease-in-out infinite 2s",
       },
       keyframes: {
         fadeIn: {
@@ -76,6 +97,10 @@ export default {
         slideUp: {
           "0%": { opacity: "0", transform: "translateY(30px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "50%": { transform: "translate(20px, -30px)" },
         },
       },
       typography: {

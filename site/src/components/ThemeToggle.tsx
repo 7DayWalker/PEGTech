@@ -28,7 +28,7 @@ export function ThemeToggle() {
           document.documentElement.classList.remove("dark");
         }
       }}
-      className="rounded-lg p-2 text-slate-400 hover:text-accent hover:bg-slate-800 transition-colors"
+      className="rounded-lg p-2 text-gray-400 hover:text-accent hover:bg-dark-700 transition-colors"
       aria-label="Toggle theme"
     >
       {dark ? <Sun size={18} className="text-accent" /> : <Moon size={18} />}

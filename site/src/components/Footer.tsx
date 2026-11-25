@@ -1,111 +1,71 @@
-/** Site footer — dark theme with blue accent. */
+/** Site footer — dark charcoal theme with Gemini gradient accents. */
 import { Link } from "react-router-dom";
-import { Mail, Phone, Globe } from "lucide-react";
+import { Mail, Globe } from "lucide-react";
 import { Container } from "./Section";
+import logoMark from "../assets/brand/pegtech-icon-mark.png";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/50 bg-dark-900 mt-auto pt-16 pb-8">
+    <footer className="border-t border-white/10 bg-dark-900 mt-auto pt-16 pb-8">
       <Container>
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center gap-2 font-bold text-xl tracking-tight mb-6">
-              <span className="text-blue-500">P</span>EG<span className="text-white">Tech</span>
+            <div className="flex items-center gap-2 font-bold text-xl tracking-tight mb-1">
+              <img src={logoMark} alt="PEGTech" className="h-9 w-9 object-contain" />
+              <span>PEG<span className="text-gradient">Tech</span></span>
             </div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500 mb-6 ml-11">
+              A Paul Edison Group Company
+            </p>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
               Web applications, AI solutions, and digital services for modern
               businesses. Nigeria-based, WhatsApp-first, built for growth.
             </p>
-            <div className="mt-6 flex gap-4">
+            <div className="mt-6 flex flex-col gap-3 text-sm">
               <a
                 href="https://wa.me/2348012345678"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors"
+                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors w-fit"
               >
-                <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold text-white">WhatsApp</span>
-                WhatsApp
+                <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-[8px] font-bold text-white">W</span>
+                WhatsApp (Meta-verified)
               </a>
               <a
                 href="mailto:hello@pegtech.co"
-                className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors"
+                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors w-fit"
               >
                 <Mail size={16} /> hello@pegtech.co
               </a>
             </div>
           </div>
           <div>
-            <h4 className="font-semibold text-slate-100 mb-4">Services</h4>
+            <h4 className="font-semibold text-white mb-4 text-sm">Services</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li>
-                <Link to="/services#web" className="hover:text-blue-400 transition-colors">
-                  Web Development
-                </Link>
-              </li>
-              <li>
-                <Link to="/services#app" className="hover:text-blue-400 transition-colors">
-                  Mobile Apps
-                </Link>
-              </li>
-              <li>
-                <Link to="/services#ai" className="hover:text-blue-400 transition-colors">
-                  AI Solutions
-                </Link>
-              </li>
-              <li>
-                <Link to="/services#marketing" className="hover:text-blue-400 transition-colors">
-                  Digital Marketing
-                </Link>
-              </li>
-              <li>
-                <Link to="/services#design" className="hover:text-blue-400 transition-colors">
-                  Brand & Design
-                </Link>
-              </li>
+              <li><Link to="/services#web" className="hover:text-white transition-colors">Web Development</Link></li>
+              <li><Link to="/services#app" className="hover:text-white transition-colors">Mobile Apps</Link></li>
+              <li><Link to="/services#ai" className="hover:text-white transition-colors">AI Solutions</Link></li>
+              <li><Link to="/services#marketing" className="hover:text-white transition-colors">Digital Marketing</Link></li>
+              <li><Link to="/services#design" className="hover:text-white transition-colors">Brand & Design</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold text-slate-100 mb-4">Company</h4>
+            <h4 className="font-semibold text-white mb-4 text-sm">Company</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li>
-                <Link to="/about" className="hover:text-blue-400 transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/work" className="hover:text-blue-400 transition-colors">
-                  Our Work
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="hover:text-blue-400 transition-colors">
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold text-slate-100 mb-4">Contact</h4>
-            <ul className="space-y-3 text-sm text-slate-400">
-              <li className="flex items-center gap-3">
-                <Globe size={16} className="text-blue-500" />
-                <span>Lagos, Nigeria</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone size={16} className="text-blue-500" />
-                <span>+234 801 234 5678</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail size={16} className="text-blue-500" />
-                <span>hello@pegtech.co</span>
-              </li>
+              <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
+              <li><Link to="/work" className="hover:text-white transition-colors">Our Work</Link></li>
+              <li><Link to="/careers" className="hover:text-white transition-colors">Careers</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
             </ul>
           </div>
         </div>
-        <div className="border-t border-border/50 pt-8">
-          <p className="text-xs text-slate-500 text-center">
-            © {new Date().getFullYear()} PEGTech. Built for modern businesses.
+        <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between gap-4 items-center">
+          <p className="text-xs text-slate-500">
+            © {new Date().getFullYear()} PEGTech. Lagos, Nigeria. Built for modern businesses.
           </p>
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <Globe size={14} /> Serving clients worldwide
+          </div>
         </div>
       </Container>
     </footer>

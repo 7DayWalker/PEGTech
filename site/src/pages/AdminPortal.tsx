@@ -42,11 +42,11 @@ export function AdminPortal() {
         <Container>
           <div className="flex justify-between items-start mb-8">
             <div>
-              <Badge className="mb-3 inline-block blue">Staff Dashboard</Badge>
-              <h1 className="text-2xl font-bold text-slate-100 mb-1">
+              <Badge variant="accent" className="mb-3 inline-block">Staff Dashboard</Badge>
+              <h1 className="text-2xl font-bold text-white mb-1">
                 Admin Portal
               </h1>
-              <p className="text-slate-400">Manage your agency operations</p>
+              <p className="text-gray-400">Manage your agency operations</p>
             </div>
             <Link to="/admin/clients" className="btn-primary text-xs px-3 py-1.5">
               + New Client
@@ -60,7 +60,7 @@ export function AdminPortal() {
                 label: "Clients",
                 value: stats.total_clients,
                 icon: Users,
-                color: "text-blue-400",
+                color: "text-gemini-blue",
               },
               {
                 label: "Projects",
@@ -84,15 +84,15 @@ export function AdminPortal() {
               <Card
                 key={stat.label}
                 padding="md"
-                className="group hover:bg-slate-800/50"
+                className="group hover:bg-white/5"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <div className={`w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center ${stat.color}`}>
+                  <div className={`w-10 h-10 rounded-xl bg-dark-700 flex items-center justify-center ${stat.color}`}>
                     <stat.icon size={20} />
                   </div>
-                  <span className="text-xs text-slate-400">{stat.label}</span>
+                  <span className="text-xs text-gray-400">{stat.label}</span>
                 </div>
-                <div className="text-2xl font-bold text-slate-100">
+                <div className="text-2xl font-bold text-white">
                   {stat.value}
                 </div>
               </Card>
@@ -101,43 +101,43 @@ export function AdminPortal() {
 
           {/* Quick actions */}
           <Card padding="lg" className="mb-8">
-            <h3 className="text-lg font-bold text-slate-100 mb-6">
+            <h3 className="text-lg font-bold text-white mb-6">
               Quick Actions
             </h3>
             <div className="grid md:grid-cols-4 gap-4">
               <Link
                 to="/admin/clients"
-                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-blue-500/50 transition-colors text-center"
+                className="p-4 rounded-xl border border-white/10 hover:bg-white/5 hover:border-white/20 transition-colors text-center"
               >
-                <Users size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-blue-400 transition-colors" />
-                <p className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
+                <Users size={24} className="mx-auto mb-2 text-gray-400 group-hover:text-gemini-blue transition-colors" />
+                <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
                   Manage Clients
                 </p>
               </Link>
               <Link
                 to="/admin/projects"
-                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-blue-500/50 transition-colors text-center"
+                className="p-4 rounded-xl border border-white/10 hover:bg-white/5 hover:border-white/20 transition-colors text-center"
               >
-                <Folder size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-green-400 transition-colors" />
-                <p className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
+                <Folder size={24} className="mx-auto mb-2 text-gray-400 group-hover:text-green-400 transition-colors" />
+                <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
                   Manage Projects
                 </p>
               </Link>
               <Link
                 to="/admin/leads"
-                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-blue-500/50 transition-colors text-center"
+                className="p-4 rounded-xl border border-white/10 hover:bg-white/5 hover:border-white/20 transition-colors text-center"
               >
-                <Mail size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-purple-400 transition-colors" />
-                <p className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
+                <Mail size={24} className="mx-auto mb-2 text-gray-400 group-hover:text-purple-400 transition-colors" />
+                <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
                   Manage Leads
                 </p>
               </Link>
               <Link
                 to="/audit"
-                className="p-4 rounded-xl border border-border/50 hover:bg-slate-800/50 hover:border-blue-500/50 transition-colors text-center"
+                className="p-4 rounded-xl border border-white/10 hover:bg-white/5 hover:border-white/20 transition-colors text-center"
               >
-                <BarChart3 size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-blue-400 transition-colors" />
-                <p className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
+                <BarChart3 size={24} className="mx-auto mb-2 text-gray-400 group-hover:text-gemini-blue transition-colors" />
+                <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
                   Run AI Audit
                 </p>
               </Link>
@@ -146,11 +146,11 @@ export function AdminPortal() {
 
           {/* Escalations alert */}
           {stats.pending_escalations > 0 && (
-            <Card padding="md" className="border-l-4 border-blue-500 bg-blue-500/10">
+            <Card padding="md" className="border-l-4 border-blue-500 bg-white/5">
               <div className="flex items-start gap-3">
-                <AlertTriangle size={20} className="text-blue-500 mt-0.5" />
+                <AlertTriangle size={20} className="text-gemini-purple mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-blue-300">Pending Escalations</h4>
+                  <h4 className="font-bold text-gemini-pink">Pending Escalations</h4>
                   <p className="text-sm text-blue-200">
                     You have {stats.pending_escalations} escalation(s) waiting for attention.
                   </p>
