@@ -43,33 +43,58 @@ class Base(DeclarativeBase):
     pass
 
 
+def _auto_migrate_missing_columns():
+    """Add any column that exists on a model but not yet on the live table.
+
+    Base.metadata.create_all() only creates tables that don't exist yet — it
+    never ALTERs an existing table to add a column a model gained later. On
+    a long-lived Postgres database (Railway) that drifts out of sync with
+    models.py over time, that leaves columns silently missing, and
+    SQLAlchemy's Query(Model).count() selects every mapped column internally
+    (it counts rows of a wrapped subquery), so even a plain count() blows up
+    with 'column does not exist' the moment a model gains a field the live
+    table doesn't have yet. This works generically across SQLite and
+    Postgres via SQLAlchemy's cross-dialect inspector, instead of the old
+    SQLite-only PRAGMA-based approach.
+    """
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if table.name not in existing_tables:
+                continue  # create_all() already built this one fresh, in full
+            existing_cols = {c["name"] for c in inspector.get_columns(table.name)}
+            for col in table.columns:
+                if col.name in existing_cols:
+                    continue
+                try:
+                    col_type = col.type.compile(dialect=engine.dialect)
+                except Exception as e:
+                    print(f"auto-migrate: can't compile type for {table.name}.{col.name}: {e}", flush=True)
+                    continue
+                ddl = f'ALTER TABLE {table.name} ADD COLUMN {col.name} {col_type}'
+                try:
+                    conn.exec_driver_sql(ddl)
+                    print(f"auto-migrate: added {table.name}.{col.name} ({col_type})", flush=True)
+                except Exception as e:
+                    print(f"auto-migrate: failed to add {table.name}.{col.name}: {e}", flush=True)
+
+
 def init_db():
-    """Idempotent schema setup: create tables, then patch older SQLite files."""
+    """Idempotent schema setup: create missing tables, then backfill any
+    columns models.py has gained since a table was first created."""
     t0 = time.time()
     print("init_db: starting schema check ...", flush=True)
     from app import models  # noqa: F401 — register tables on Base.metadata
     Base.metadata.create_all(engine)
+    _auto_migrate_missing_columns()
     print(f"init_db: schema ready in {time.time()-t0:.1f}s", flush=True)
 
     if not DATABASE_URL.startswith("sqlite"):
         return
 
     with engine.begin() as conn:
-        def cols(table):
-            return {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
-
-        # Column backfills for older SQLite deployments
-        specs = [
-            ("documents", "stored_name", "VARCHAR(80) DEFAULT ''"),
-            ("documents", "mime", "VARCHAR(120) DEFAULT ''"),
-            ("documents", "size_bytes", "INTEGER DEFAULT 0"),
-            ("weekly_updates", "status", "VARCHAR(20) DEFAULT 'published'"),
-            ("qa_reviews", "created_at", "DATETIME"),
-        ]
-        for table, col, ddl in specs:
-            if col not in cols(table):
-                conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
-
         conn.exec_driver_sql(
             "UPDATE weekly_updates SET published_at = created_at WHERE status = 'published' AND published_at IS NULL"
         )
