@@ -771,7 +771,10 @@ class AiContentGeneratorOut(BaseModel):
     meta_description: Optional[str] = None
 
 
-# ---------------------------------------------------------------------------\n# Enquiries\n# ---------------------------------------------------------------------------\nclass EnquiryIn(BaseModel):
+# ---------------------------------------------------------------------------
+# Enquiries
+# ---------------------------------------------------------------------------
+class EnquiryIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     email: EmailStr
     phone: Optional[str] = Field(None, max_length=60)
@@ -789,6 +792,36 @@ class EnquiryOut(BaseModel):
     service: Optional[str] = None
     message: str
     status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ---------------------------------------------------------------------------
+# Messaging (email / WhatsApp)
+# ---------------------------------------------------------------------------
+class EmailSendIn(BaseModel):
+    subject: str = Field(min_length=1, max_length=255)
+    body: str = Field(min_length=1)
+
+
+class WhatsAppSendIn(BaseModel):
+    message: str = Field(min_length=1, max_length=4096)
+
+
+class MessageLogOut(BaseModel):
+    id: int
+    channel: str
+    lead_id: Optional[int] = None
+    client_id: Optional[int] = None
+    to_address: str
+    subject: Optional[str] = None
+    body: str
+    trigger: str
+    status: str
+    provider_id: Optional[str] = None
+    error: Optional[str] = None
     created_at: datetime
 
     class Config:

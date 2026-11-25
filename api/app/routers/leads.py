@@ -7,6 +7,7 @@ from app.db import get_db
 from app import models
 from app import schemas
 from app.deps import require_staff
+from app import notifications
 
 router = APIRouter(prefix="/api/leads", tags=["leads"])
 
@@ -30,10 +31,12 @@ def update_lead(lead_id: int, payload: schemas.LeadUpdate, request: Request,
     lead = db.get(models.Lead, lead_id)
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found.")
+    old_stage = lead.stage
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(lead, k, v)
     db.commit()
     db.refresh(lead)
+    notifications.notify_lead_stage_change(db, lead, old_stage, lead.stage)
     return lead
 
 

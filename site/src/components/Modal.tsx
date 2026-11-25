@@ -1,5 +1,6 @@
 /**
- * Accessible modal dialog.
+ * Accessible modal dialog — frosted glass styling, consistent with the
+ * rest of the dashboard's Liquid Glass design system.
  */
 import { useEffect, useCallback, ReactNode } from "react"
 import { X } from "lucide-react"
@@ -9,9 +10,16 @@ type ModalProps = {
   onClose: () => void
   title?: string
   children: ReactNode
+  size?: "sm" | "md" | "lg"
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+const sizeClasses = {
+  sm: "max-w-md",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+}
+
+export function Modal({ isOpen, onClose, title, children, size = "md" }: ModalProps) {
   const handleKey = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -20,6 +28,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   )
 
   useEffect(() => {
+    if (!isOpen) return
     document.addEventListener("keydown", handleKey)
     document.body.style.overflow = "hidden"
     return () => {
@@ -31,15 +40,22 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={onClose}
+    >
       <div
-        className="bg-card border border-input rounded-lg shadow-xl p-6 max-w-lg w-full animate-in zoom-in duration-200"
+        className={`glass-card rounded-3xl border-white/15 shadow-2xl p-6 w-full ${sizeClasses[size]} max-h-[85vh] overflow-y-auto animate-in zoom-in-95 duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-semibold text-text">{title}</h2>
-            <button onClick={onClose} className="ml-auto text-muted hover:text-accent">
+          <div className="flex items-center gap-2 mb-5">
+            <h2 className="text-lg font-bold text-white">{title}</h2>
+            <button
+              onClick={onClose}
+              className="ml-auto text-gray-400 hover:text-white transition-colors"
+              aria-label="Close"
+            >
               <X size={20} />
             </button>
           </div>

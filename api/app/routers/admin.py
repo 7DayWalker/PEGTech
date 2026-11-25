@@ -7,6 +7,7 @@ from app.db import get_db
 from app import models
 from app import schemas
 from app.deps import require_staff, require_admin
+from app import notifications
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -22,6 +23,12 @@ def admin_stats(request: Request, db: Session = Depends(get_db), _=Depends(requi
         "pending_escalations": db.query(models.Escalation).filter_by(status="queued").count(),
         "total_users": db.query(models.AdminUser).count() + db.query(models.ClientUser).count(),
     }
+
+
+# ── Staff directory (for assignment dropdowns) ──
+@router.get("/staff", response_model=list[schemas.AdminUserMiniOut])
+def list_staff(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
+    return db.query(models.AdminUser).filter_by(is_active=True).order_by(models.AdminUser.name).all()
 
 
 # ── Clients ──
@@ -94,10 +101,12 @@ def update_lead(lead_id: int, payload: schemas.LeadUpdate, request: Request,
     lead = db.get(models.Lead, lead_id)
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found.")
+    old_stage = lead.stage
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(lead, k, v)
     db.commit()
     db.refresh(lead)
+    notifications.notify_lead_stage_change(db, lead, old_stage, lead.stage)
     return lead
 
 

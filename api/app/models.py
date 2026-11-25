@@ -463,4 +463,46 @@ class Document(Base):
     __table_args__ = (UniqueConstraint("slug", name="uq_document_slug"),)
 
 
-# ---------------------------------------------------------------------------\n# Enquiries\n# ---------------------------------------------------------------------------\nclass Enquiry(Base):\n    \"\"\"Public contact-form enquiries.\"\"\"\n    __tablename__ = \"enquiries\"\n\n    id: Mapped[int] = mapped_column(primary_key=True, index=True)\n    name: Mapped[str] = mapped_column(String(120), nullable=False)\n    email: Mapped[str] = mapped_column(String(200), index=True, nullable=False)\n    phone: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)\n    company: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)\n    service: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)\n    message: Mapped[str] = mapped_column(Text, nullable=False)\n    status: Mapped[str] = mapped_column(String(40), default=\"new\", index=True)\n    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+# ---------------------------------------------------------------------------
+# Enquiries
+# ---------------------------------------------------------------------------
+class Enquiry(Base):
+    """Public contact-form enquiries."""
+    __tablename__ = "enquiries"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    email: Mapped[str] = mapped_column(String(200), index=True, nullable=False)
+    phone: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    company: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    service: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(40), default="new", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Messaging (email / WhatsApp integrations)
+# ---------------------------------------------------------------------------
+class MessageLog(Base):
+    """Audit trail of every outbound email/WhatsApp message the platform sends,
+    whether triggered manually by staff or automatically on lead stage changes."""
+    __tablename__ = "message_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    channel: Mapped[str] = mapped_column(String(20), nullable=False)  # email, whatsapp
+    lead_id: Mapped[Optional[int]] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), nullable=True, index=True)
+    client_id: Mapped[Optional[int]] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), nullable=True, index=True)
+    to_address: Mapped[str] = mapped_column(String(255), nullable=False)
+    subject: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # email only
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    trigger: Mapped[str] = mapped_column(String(40), default="manual")  # manual, stage_change
+    status: Mapped[str] = mapped_column(String(30), default="sent")  # sent, failed, skipped_not_configured
+    provider_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    sent_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("admin_users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+    lead = relationship("Lead")
+    client = relationship("Client")
+    sent_by = relationship("AdminUser")
