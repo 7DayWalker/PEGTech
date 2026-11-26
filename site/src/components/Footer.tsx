@@ -61,7 +61,7 @@ export function Footer() {
         </div>
         <div className="border-t border-white/10 pt-8 flex flex-col items-center text-center gap-2">
           <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} PEGTech. Lagos, Nigeria. Built for modern businesses. Serving clients worldwide.
+            © {new Date().getFullYear()} PEGTech. Built for modern businesses. Serving clients worldwide.
           </p>
           <p className="text-[11px] text-slate-600/70">
             PEGTech is a trading name of PAUL EDISON LIMITED (RC 1833166).

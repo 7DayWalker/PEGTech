@@ -22,7 +22,7 @@ const ROLES = [
   {
     id: 2,
     role: "AI Product Designer",
-    meta: "Full-time • Hybrid (Lagos)",
+    meta: "Full-time • Hybrid (Port Harcourt)",
     blurb:
       "Design intuitive user experiences for AI-powered products and client dashboards.",
   },

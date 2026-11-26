@@ -31,7 +31,7 @@ export function About() {
   const values = [
     {
       title: "Nigeria-based",
-      desc: "Rooted in Lagos, serving businesses across Nigeria and worldwide.",
+      desc: "Rooted in Nigeria, serving businesses across the country and worldwide.",
       icon: Globe,
     },
     {

@@ -93,7 +93,7 @@ export function Contact() {
                   <div>
                     <h3 className="font-bold text-white">Location</h3>
                     <p className="text-gray-400 text-sm">
-                      Lagos, Nigeria<br />
+                      Nigeria-based<br />
                       Serving clients worldwide
                     </p>
                   </div>
