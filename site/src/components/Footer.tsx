@@ -66,6 +66,11 @@ export function Footer() {
           <p className="text-[11px] text-slate-600/70">
             PEGTech is a trading name of PAUL EDISON LIMITED (RC 1833166).
           </p>
+          <div className="flex items-center gap-4 text-[11px] text-slate-600">
+            <Link to="/privacy" className="hover:text-slate-400 transition-colors">Privacy Policy</Link>
+            <span className="text-slate-700">•</span>
+            <Link to="/data-deletion" className="hover:text-slate-400 transition-colors">Data Deletion</Link>
+          </div>
         </div>
       </Container>
     </footer>
