@@ -153,6 +153,41 @@ def _backfill_null_defaults():
                     print(f"auto-migrate: failed to backfill {table.name}.{col.name}: {e}", flush=True)
 
 
+def _sync_nullable_columns():
+    """Drop a stale NOT NULL on any live column whose current model
+    declares it nullable=True.
+
+    The mirror-image gap to `_relax_orphan_not_null_columns()`: that one
+    only handles columns the model no longer declares at all. This handles
+    columns that are still in the model — just declared nullable there —
+    but whose live table was created (or last altered) back when that
+    column was required. Without this, any INSERT that legitimately omits
+    the field (e.g. a webhook auto-creating a lead with only a phone
+    number) fails with a NotNullViolation even though the model says it's
+    optional.
+    """
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if table.name not in existing_tables:
+                continue
+            live_cols = {c["name"]: c for c in inspector.get_columns(table.name)}
+            for col in table.columns:
+                if col.nullable is not True:
+                    continue  # model requires it — nothing to relax
+                live = live_cols.get(col.name)
+                if live is None or live.get("nullable", True):
+                    continue  # column missing (handled elsewhere) or already nullable
+                ddl = f'ALTER TABLE {table.name} ALTER COLUMN {col.name} DROP NOT NULL'
+                try:
+                    conn.exec_driver_sql(ddl)
+                    print(f"auto-migrate: relaxed stale NOT NULL on {table.name}.{col.name} (model declares it nullable)", flush=True)
+                except Exception as e:
+                    print(f"auto-migrate: failed to relax {table.name}.{col.name}: {e}", flush=True)
+
+
 def init_db():
     """Idempotent schema setup: create missing tables, then backfill any
     columns models.py has gained since a table was first created."""
@@ -162,6 +197,7 @@ def init_db():
     Base.metadata.create_all(engine)
     _auto_migrate_missing_columns()
     _relax_orphan_not_null_columns()
+    _sync_nullable_columns()
     _backfill_null_defaults()
     print(f"init_db: schema ready in {time.time()-t0:.1f}s", flush=True)
 

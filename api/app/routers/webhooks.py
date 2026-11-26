@@ -114,6 +114,7 @@ def _find_or_create_lead(db: Session, wa_id: str, profile_name: str | None) -> m
 
     lead = models.Lead(
         name=profile_name or f"WhatsApp +{wa_id}",
+        business_name="",  # defense-in-depth: avoid NOT NULL surprises regardless of live schema state
         phone=f"+{wa_id}",
         source="WhatsApp (inbound)",
         stage=0,
