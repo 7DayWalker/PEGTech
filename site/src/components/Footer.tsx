@@ -1,6 +1,6 @@
 /** Site footer — dark charcoal theme with Gemini gradient accents. */
 import { Link } from "react-router-dom";
-import { Mail, Globe } from "lucide-react";
+import { Mail } from "lucide-react";
 import { Container } from "./Section";
 import logoMark from "../assets/brand/pegtech-icon-mark.png";
 
@@ -59,17 +59,14 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between gap-4 items-center">
+        <div className="border-t border-white/10 pt-8 flex flex-col items-center text-center gap-2">
           <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} PEGTech. Lagos, Nigeria. Built for modern businesses.
+            © {new Date().getFullYear()} PEGTech. Lagos, Nigeria. Built for modern businesses. Serving clients worldwide.
           </p>
-          <div className="flex items-center gap-4 text-xs text-slate-500">
-            <Globe size={14} /> Serving clients worldwide
-          </div>
+          <p className="text-[11px] text-slate-600/70">
+            PEGTech is a trading name of PAUL EDISON LIMITED (RC 1833166).
+          </p>
         </div>
-        <p className="text-[11px] text-slate-600 text-center sm:text-left mt-3">
-          PEGTech is a trading name of PAUL EDISON LIMITED (RC 1833166).
-        </p>
       </Container>
     </footer>
   );
