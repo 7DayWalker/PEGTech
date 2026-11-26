@@ -67,6 +67,9 @@ export function Footer() {
             <Globe size={14} /> Serving clients worldwide
           </div>
         </div>
+        <p className="text-[11px] text-slate-600 text-center sm:text-left mt-3">
+          PEGTech is a trading name of PAUL EDISON LIMITED (RC 1833166).
+        </p>
       </Container>
     </footer>
   );
