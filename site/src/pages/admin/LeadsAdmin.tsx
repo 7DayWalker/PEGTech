@@ -12,7 +12,10 @@ import { Modal } from "../../components/Modal";
 import { Input, Select, Textarea } from "../../components/Input";
 import { GlowBackground } from "../../components/GlowBackground";
 import { MessageCenterModal } from "../../components/MessageCenterModal";
-import { ArrowLeft, Plus, Mail, Pencil, Trash2, Phone, MessageSquare } from "lucide-react";
+import {
+  ArrowLeft, Plus, Mail, Pencil, Trash2, Phone, MessageSquare,
+  ArrowRight, Trophy, LayoutGrid, Rows3,
+} from "lucide-react";
 
 type Lead = {
   id: number;
@@ -33,6 +36,8 @@ type Lead = {
 };
 
 const STAGES = ["New", "Contacted", "Qualified", "Proposal", "Won"];
+
+const STAGE_DOT = ["bg-blue-400", "bg-teal-400", "bg-amber-400", "bg-purple-400", "bg-emerald-400"];
 
 const scoreVariant: Record<string, "default" | "success" | "warning"> = {
   HOT: "warning",
@@ -63,6 +68,7 @@ export function LeadsAdmin() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [stageFilter, setStageFilter] = useState<number | "all">("all");
+  const [view, setView] = useState<"board" | "list">(() => (localStorage.getItem("pegtech_leads_view") as "board" | "list") || "board");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [messagingLead, setMessagingLead] = useState<Lead | null>(null);
@@ -89,6 +95,22 @@ export function LeadsAdmin() {
     leads.forEach((l) => { if (l.stage >= 0 && l.stage <= 4) counts[l.stage]++; });
     return counts;
   }, [leads]);
+
+  const columns = useMemo(() => {
+    const cols: Lead[][] = [[], [], [], [], []];
+    leads.forEach((l) => { if (l.stage >= 0 && l.stage <= 4) cols[l.stage].push(l); });
+    return cols;
+  }, [leads]);
+
+  const totalValue = useMemo(
+    () => leads.reduce((sum, l) => sum + (l.value_usd || 0), 0),
+    [leads],
+  );
+
+  function switchView(next: "board" | "list") {
+    setView(next);
+    localStorage.setItem("pegtech_leads_view", next);
+  }
 
   function openCreate() {
     setEditingId(null);
@@ -180,7 +202,29 @@ export function LeadsAdmin() {
             <h1 className="text-2xl font-bold text-white">
               <span className="text-gradient">Leads</span>
             </h1>
-            <p className="text-gray-400 text-sm">{leads.length} total</p>
+            <p className="text-gray-400 text-sm">
+              {leads.length} total{totalValue > 0 && <> · ${totalValue.toLocaleString()} pipeline value</>}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
+            <button
+              onClick={() => switchView("board")}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                view === "board" ? "bg-gemini-gradient text-white" : "text-gray-400 hover:text-white"
+              }`}
+              aria-label="Board view"
+            >
+              <LayoutGrid size={14} /> Board
+            </button>
+            <button
+              onClick={() => switchView("list")}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                view === "list" ? "bg-gemini-gradient text-white" : "text-gray-400 hover:text-white"
+              }`}
+              aria-label="List view"
+            >
+              <Rows3 size={14} /> List
+            </button>
           </div>
           <Button onClick={openCreate} size="sm">
             <Plus size={16} />
@@ -188,99 +232,140 @@ export function LeadsAdmin() {
           </Button>
         </div>
 
-        {/* Pipeline summary */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-          {STAGES.map((label, i) => (
-            <button
-              key={label}
-              onClick={() => setStageFilter(stageFilter === i ? "all" : i)}
-              className={`glass-card rounded-2xl p-4 text-left transition-all ${
-                stageFilter === i ? "border-gemini-purple/50 bg-white/[0.08]" : "hover:bg-white/[0.06]"
-              }`}
-            >
-              <p className="text-xs text-gray-400 mb-1">{label}</p>
-              <p className="text-xl font-bold text-white">{stageCounts[i]}</p>
-            </button>
-          ))}
-        </div>
+        {loading ? (
+          <Card className="p-10 text-center text-gray-400">Loading leads…</Card>
+        ) : leads.length === 0 ? (
+          <Card className="p-10 text-center text-gray-400">
+            <Mail size={32} className="mx-auto mb-3 opacity-40" />
+            No leads here yet.
+          </Card>
+        ) : view === "board" ? (
+          <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+            {STAGES.map((label, i) => (
+              <div key={label} className="flex-shrink-0 w-[270px] flex flex-col gap-3">
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${STAGE_DOT[i]}`} />
+                    <span className="text-sm font-semibold text-white">{label}</span>
+                    <span className="text-xs text-gray-500">{stageCounts[i]}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 min-h-[60px]">
+                  {columns[i].length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-white/10 p-4 text-center text-xs text-gray-600">
+                      No leads
+                    </div>
+                  ) : (
+                    columns[i].map((l) => (
+                      <LeadCard
+                        key={l.id}
+                        lead={l}
+                        onMessage={() => setMessagingLead(l)}
+                        onEdit={() => openEdit(l)}
+                        onDelete={() => handleDelete(l.id)}
+                        onAdvance={() => advanceStage(l)}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Pipeline summary (List view filter) */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+              {STAGES.map((label, i) => (
+                <button
+                  key={label}
+                  onClick={() => setStageFilter(stageFilter === i ? "all" : i)}
+                  className={`glass-card rounded-2xl p-4 text-left transition-all ${
+                    stageFilter === i ? "border-gemini-purple/50 bg-white/[0.08]" : "hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <p className="text-xs text-gray-400 mb-1">{label}</p>
+                  <p className="text-xl font-bold text-white">{stageCounts[i]}</p>
+                </button>
+              ))}
+            </div>
 
-        <Card padding="none" className="overflow-hidden">
-          {loading ? (
-            <div className="p-10 text-center text-gray-400">Loading leads…</div>
-          ) : filtered.length === 0 ? (
-            <div className="p-10 text-center text-gray-400">
-              <Mail size={32} className="mx-auto mb-3 opacity-40" />
-              No leads here yet.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/10 text-left text-gray-400">
-                    <th className="px-5 py-3 font-medium">Lead</th>
-                    <th className="px-5 py-3 font-medium">Contact</th>
-                    <th className="px-5 py-3 font-medium">Service</th>
-                    <th className="px-5 py-3 font-medium">Score</th>
-                    <th className="px-5 py-3 font-medium">Value</th>
-                    <th className="px-5 py-3 font-medium">Stage</th>
-                    <th className="px-5 py-3 font-medium"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((l) => (
-                    <tr key={l.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
-                      <td className="px-5 py-3 text-white font-medium">
-                        {l.name}
-                        {l.business_name && <div className="text-xs text-gray-500">{l.business_name}</div>}
-                      </td>
-                      <td className="px-5 py-3 text-gray-400">
-                        <div className="flex flex-col gap-0.5">
-                          {l.email && <span className="flex items-center gap-1.5"><Mail size={12} />{l.email}</span>}
-                          {l.phone && <span className="flex items-center gap-1.5"><Phone size={12} />{l.phone}</span>}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3 text-gray-300">{l.service || "—"}</td>
-                      <td className="px-5 py-3">
-                        <Badge variant={scoreVariant[l.score || "WARM"] || "default"}>{l.score || "WARM"}</Badge>
-                      </td>
-                      <td className="px-5 py-3 text-gray-300">
-                        {l.value_usd ? `$${l.value_usd.toLocaleString()}` : "—"}
-                      </td>
-                      <td className="px-5 py-3">
-                        <button
-                          onClick={() => advanceStage(l)}
-                          disabled={l.stage >= 4}
-                          className="text-left disabled:cursor-default"
-                          title={l.stage < 4 ? `Advance to ${STAGES[l.stage + 1]}` : "Won"}
-                        >
-                          <Badge variant={l.stage === 4 ? "success" : "default"}>{STAGES[l.stage]}</Badge>
-                        </button>
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center justify-end gap-3">
-                          <button
-                            onClick={() => setMessagingLead(l)}
-                            disabled={!l.email && !l.phone}
-                            className="text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                            aria-label={`Message ${l.name}`}
-                          >
-                            <MessageSquare size={16} />
-                          </button>
-                          <button onClick={() => openEdit(l)} className="text-gray-400 hover:text-white transition-colors" aria-label={`Edit ${l.name}`}>
-                            <Pencil size={16} />
-                          </button>
-                          <button onClick={() => handleDelete(l.id)} className="text-gray-400 hover:text-red-400 transition-colors" aria-label={`Delete ${l.name}`}>
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+            <Card padding="none" className="overflow-hidden">
+              {filtered.length === 0 ? (
+                <div className="p-10 text-center text-gray-400">
+                  <Mail size={32} className="mx-auto mb-3 opacity-40" />
+                  No leads here yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10 text-left text-gray-400">
+                        <th className="px-5 py-3 font-medium">Lead</th>
+                        <th className="px-5 py-3 font-medium">Contact</th>
+                        <th className="px-5 py-3 font-medium">Service</th>
+                        <th className="px-5 py-3 font-medium">Score</th>
+                        <th className="px-5 py-3 font-medium">Value</th>
+                        <th className="px-5 py-3 font-medium">Stage</th>
+                        <th className="px-5 py-3 font-medium"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((l) => (
+                        <tr key={l.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
+                          <td className="px-5 py-3 text-white font-medium">
+                            {l.name}
+                            {l.business_name && <div className="text-xs text-gray-500">{l.business_name}</div>}
+                          </td>
+                          <td className="px-5 py-3 text-gray-400">
+                            <div className="flex flex-col gap-0.5">
+                              {l.email && <span className="flex items-center gap-1.5"><Mail size={12} />{l.email}</span>}
+                              {l.phone && <span className="flex items-center gap-1.5"><Phone size={12} />{l.phone}</span>}
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 text-gray-300">{l.service || "—"}</td>
+                          <td className="px-5 py-3">
+                            <Badge variant={scoreVariant[l.score || "WARM"] || "default"}>{l.score || "WARM"}</Badge>
+                          </td>
+                          <td className="px-5 py-3 text-gray-300">
+                            {l.value_usd ? `$${l.value_usd.toLocaleString()}` : "—"}
+                          </td>
+                          <td className="px-5 py-3">
+                            <button
+                              onClick={() => advanceStage(l)}
+                              disabled={l.stage >= 4}
+                              className="text-left disabled:cursor-default"
+                              title={l.stage < 4 ? `Advance to ${STAGES[l.stage + 1]}` : "Won"}
+                            >
+                              <Badge variant={l.stage === 4 ? "success" : "default"}>{STAGES[l.stage]}</Badge>
+                            </button>
+                          </td>
+                          <td className="px-5 py-3">
+                            <div className="flex items-center justify-end gap-3">
+                              <button
+                                onClick={() => setMessagingLead(l)}
+                                disabled={!l.email && !l.phone}
+                                className="text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                aria-label={`Message ${l.name}`}
+                              >
+                                <MessageSquare size={16} />
+                              </button>
+                              <button onClick={() => openEdit(l)} className="text-gray-400 hover:text-white transition-colors" aria-label={`Edit ${l.name}`}>
+                                <Pencil size={16} />
+                              </button>
+                              <button onClick={() => handleDelete(l.id)} className="text-gray-400 hover:text-red-400 transition-colors" aria-label={`Delete ${l.name}`}>
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </Card>
+          </>
+        )}
       </Container>
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? "Edit lead" : "New lead"} size="lg">
@@ -337,5 +422,86 @@ export function LeadsAdmin() {
         />
       )}
     </div>
+  );
+}
+
+function LeadCard({
+  lead, onMessage, onEdit, onDelete, onAdvance,
+}: {
+  lead: Lead;
+  onMessage: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onAdvance: () => void;
+}) {
+  return (
+    <Card padding="sm" className="!p-4">
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-white truncate" title={lead.name}>{lead.name}</p>
+          {lead.business_name && (
+            <p className="text-xs text-gray-500 truncate" title={lead.business_name}>{lead.business_name}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={onMessage}
+            disabled={!lead.email && !lead.phone}
+            className="p-1 text-gray-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label={`Message ${lead.name}`}
+          >
+            <MessageSquare size={13} />
+          </button>
+          <button onClick={onEdit} className="p-1 text-gray-500 hover:text-white transition-colors" aria-label={`Edit ${lead.name}`}>
+            <Pencil size={13} />
+          </button>
+          <button onClick={onDelete} className="p-1 text-gray-500 hover:text-red-400 transition-colors" aria-label={`Delete ${lead.name}`}>
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </div>
+
+      {lead.service && <p className="text-xs text-gray-400 mb-2 line-clamp-1">{lead.service}</p>}
+
+      {(lead.email || lead.phone) && (
+        <div className="flex flex-col gap-0.5 mb-3">
+          {lead.email && (
+            <span className="flex items-center gap-1.5 text-[11px] text-gray-500 truncate">
+              <Mail size={10} className="shrink-0" />{lead.email}
+            </span>
+          )}
+          {lead.phone && (
+            <span className="flex items-center gap-1.5 text-[11px] text-gray-500 truncate">
+              <Phone size={10} className="shrink-0" />{lead.phone}
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-2 border-t border-white/5">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-bold text-white truncate">
+            {lead.value_usd ? `$${lead.value_usd.toLocaleString()}` : "—"}
+          </span>
+          <Badge variant={scoreVariant[lead.score || "WARM"] || "default"} className="text-[10px] px-2 py-0.5 shrink-0">
+            {lead.score || "WARM"}
+          </Badge>
+        </div>
+        {lead.stage < 4 ? (
+          <button
+            onClick={onAdvance}
+            title={`Advance to ${STAGES[lead.stage + 1]}`}
+            aria-label={`Advance ${lead.name} to ${STAGES[lead.stage + 1]}`}
+            className="w-7 h-7 rounded-full bg-gemini-gradient text-white flex items-center justify-center hover:brightness-110 active:scale-95 transition shrink-0"
+          >
+            <ArrowRight size={14} />
+          </button>
+        ) : (
+          <span className="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0" title="Won">
+            <Trophy size={14} />
+          </span>
+        )}
+      </div>
+    </Card>
   );
 }
