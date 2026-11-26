@@ -30,6 +30,9 @@ type Props = {
   entityName: string;
   hasEmail: boolean;
   hasPhone: boolean;
+  /** Called after a message successfully sends — e.g. a lead may have just
+   * auto-advanced stage (New -> Contacted), so the caller should refetch. */
+  onSent?: () => void;
 };
 
 const statusBadge: Record<MessageLog["status"], { variant: "success" | "warning" | "default"; label: string }> = {
@@ -38,7 +41,7 @@ const statusBadge: Record<MessageLog["status"], { variant: "success" | "warning"
   skipped_not_configured: { variant: "default", label: "Not configured" },
 };
 
-export function MessageCenterModal({ isOpen, onClose, entityType, entityId, entityName, hasEmail, hasPhone }: Props) {
+export function MessageCenterModal({ isOpen, onClose, entityType, entityId, entityName, hasEmail, hasPhone, onSent }: Props) {
   const { show } = useToast();
   const [tab, setTab] = useState<"email" | "whatsapp">(hasEmail ? "email" : "whatsapp");
   const [subject, setSubject] = useState("");
@@ -78,6 +81,7 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
         show(`${tab === "email" ? "Email" : "WhatsApp message"} sent.`, "success");
         setSubject("");
         setBody("");
+        onSent?.();
       } else if (res.ok && data?.status === "skipped_not_configured") {
         show(`${tab === "email" ? "Resend" : "WhatsApp"} isn't configured yet — logged but not delivered.`, "info");
       } else if (res.ok) {

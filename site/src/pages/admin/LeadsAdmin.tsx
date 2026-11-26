@@ -333,6 +333,7 @@ export function LeadsAdmin() {
           entityName={messagingLead.name}
           hasEmail={!!messagingLead.email}
           hasPhone={!!messagingLead.phone}
+          onSent={load}
         />
       )}
     </div>
