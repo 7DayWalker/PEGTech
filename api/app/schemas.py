@@ -285,6 +285,7 @@ class LeadOut(LeadBase):
     last_contacted_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+    converted_client_id: Optional[int] = None
 
     class Config:
         from_attributes = True

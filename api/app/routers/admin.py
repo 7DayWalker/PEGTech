@@ -95,6 +95,28 @@ def create_lead(payload: schemas.LeadCreate, request: Request,
     return lead
 
 
+def _convert_won_lead_to_client(db: Session, lead: models.Lead) -> None:
+    """Auto-create a Client when a lead first reaches the 'Won' stage (4).
+    Idempotent via lead.converted_client_id — fires exactly once per lead,
+    even if it's later edited again while staying on/returning to Won. The
+    lead record itself is untouched otherwise: this only ever adds a Client,
+    never deletes or mutates the lead."""
+    if lead.converted_client_id is not None:
+        return
+    client = models.Client(
+        company=lead.business_name or lead.name,
+        contact_name=lead.name,
+        email=lead.email,
+        phone=lead.phone,
+        status="active",
+    )
+    db.add(client)
+    db.flush()  # assign client.id without a full commit yet
+    lead.converted_client_id = client.id
+    db.commit()
+    db.refresh(lead)
+
+
 @router.put("/leads/{lead_id}", response_model=schemas.LeadOut)
 def update_lead(lead_id: int, payload: schemas.LeadUpdate, request: Request,
                 db: Session = Depends(get_db), _=Depends(require_staff())):
@@ -107,6 +129,8 @@ def update_lead(lead_id: int, payload: schemas.LeadUpdate, request: Request,
     db.commit()
     db.refresh(lead)
     notifications.notify_lead_stage_change(db, lead, old_stage, lead.stage)
+    if old_stage != 4 and lead.stage == 4:
+        _convert_won_lead_to_client(db, lead)
     return lead
 
 

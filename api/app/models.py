@@ -193,6 +193,11 @@ class Lead(Base):
     last_contacted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Set once this lead is auto-converted to a Client on reaching the 'Won'
+    # stage (stage 4), so the conversion never fires twice.
+    converted_client_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("clients.id", ondelete="SET NULL"), nullable=True,
+    )
 
     sends = relationship("CampaignSend", back_populates="lead", cascade="all, delete-orphan")
 

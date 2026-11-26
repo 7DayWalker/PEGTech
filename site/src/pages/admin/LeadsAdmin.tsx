@@ -33,6 +33,7 @@ type Lead = {
   whatsapp_opt_in?: boolean;
   email_opt_in?: boolean;
   notes?: string | null;
+  converted_client_id?: number | null;
 };
 
 const STAGES = ["New", "Contacted", "Qualified", "Proposal", "Won"];
@@ -496,6 +497,14 @@ function LeadCard({
           >
             <ArrowRight size={14} />
           </button>
+        ) : lead.converted_client_id ? (
+          <Link
+            to="/admin/clients"
+            className="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 hover:bg-emerald-500/25 transition-colors"
+            title="Won — client created. View in Clients."
+          >
+            <Trophy size={14} />
+          </Link>
         ) : (
           <span className="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0" title="Won">
             <Trophy size={14} />
