@@ -13,6 +13,18 @@ from app import notifications
 router = APIRouter(prefix="/api/admin", tags=["messaging"])
 
 
+def _maybe_advance_new_to_contacted(db: Session, lead: models.Lead, message_log: models.MessageLog) -> None:
+    """A manually-sent message counts as having contacted the lead: bump a
+    brand-new lead (stage 0) to 'Contacted' (stage 1). Never skips stages,
+    never moves a lead backward, and only fires on a message that actually
+    went out — a failed/unconfigured send doesn't count as contact."""
+    if lead.stage != 0 or message_log.status != "sent":
+        return
+    lead.stage = 1
+    db.commit()
+    db.refresh(lead)
+
+
 # ── Leads ──
 @router.post("/leads/{lead_id}/email", response_model=schemas.MessageLogOut)
 def email_lead(lead_id: int, payload: schemas.EmailSendIn, request: Request,
@@ -20,9 +32,11 @@ def email_lead(lead_id: int, payload: schemas.EmailSendIn, request: Request,
     lead = db.get(models.Lead, lead_id)
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found.")
-    return notifications.send_lead_email(
+    message_log = notifications.send_lead_email(
         db, lead, payload.subject, payload.body, trigger="manual", sent_by_id=staff.id,
     )
+    _maybe_advance_new_to_contacted(db, lead, message_log)
+    return message_log
 
 
 @router.post("/leads/{lead_id}/whatsapp", response_model=schemas.MessageLogOut)
@@ -31,9 +45,11 @@ def whatsapp_lead(lead_id: int, payload: schemas.WhatsAppSendIn, request: Reques
     lead = db.get(models.Lead, lead_id)
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found.")
-    return notifications.send_lead_whatsapp(
+    message_log = notifications.send_lead_whatsapp(
         db, lead, payload.message, trigger="manual", sent_by_id=staff.id,
     )
+    _maybe_advance_new_to_contacted(db, lead, message_log)
+    return message_log
 
 
 @router.get("/leads/{lead_id}/messages", response_model=list[schemas.MessageLogOut])
