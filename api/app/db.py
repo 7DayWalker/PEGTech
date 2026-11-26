@@ -81,6 +81,40 @@ def _auto_migrate_missing_columns():
                     print(f"auto-migrate: failed to add {table.name}.{col.name}: {e}", flush=True)
 
 
+def _relax_orphan_not_null_columns():
+    """Drop NOT NULL on any live column that the current models.py no longer
+    declares for that table.
+
+    The mirror-image problem of _auto_migrate_missing_columns(): a long-lived
+    Postgres database can also carry columns a model *used to* have and no
+    longer does (renamed, moved to another table, dropped from the class).
+    If such a leftover column was created NOT NULL, every INSERT from the
+    current code — which never sets it, because it doesn't know it exists —
+    fails with psycopg2.errors.NotNullViolation. This relaxes the constraint
+    (without touching data or dropping the column, so it stays reversible)
+    for any column present on the live table but absent from the model.
+    """
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if table.name not in existing_tables:
+                continue
+            model_cols = {c.name for c in table.columns}
+            for col in inspector.get_columns(table.name):
+                if col["name"] in model_cols:
+                    continue
+                if col.get("nullable", True):
+                    continue  # already nullable, nothing to fix
+                ddl = f'ALTER TABLE {table.name} ALTER COLUMN {col["name"]} DROP NOT NULL'
+                try:
+                    conn.exec_driver_sql(ddl)
+                    print(f"auto-migrate: relaxed orphan NOT NULL on {table.name}.{col['name']}", flush=True)
+                except Exception as e:
+                    print(f"auto-migrate: failed to relax {table.name}.{col['name']}: {e}", flush=True)
+
+
 def init_db():
     """Idempotent schema setup: create missing tables, then backfill any
     columns models.py has gained since a table was first created."""
@@ -89,6 +123,7 @@ def init_db():
     from app import models  # noqa: F401 — register tables on Base.metadata
     Base.metadata.create_all(engine)
     _auto_migrate_missing_columns()
+    _relax_orphan_not_null_columns()
     print(f"init_db: schema ready in {time.time()-t0:.1f}s", flush=True)
 
     if not DATABASE_URL.startswith("sqlite"):
