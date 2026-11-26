@@ -501,8 +501,9 @@ class MessageLog(Base):
     to_address: Mapped[str] = mapped_column(String(255), nullable=False)
     subject: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # email only
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    trigger: Mapped[str] = mapped_column(String(40), default="manual")  # manual, stage_change
-    status: Mapped[str] = mapped_column(String(30), default="sent")  # sent, failed, skipped_not_configured
+    trigger: Mapped[str] = mapped_column(String(40), default="manual")  # manual, stage_change, inbound
+    status: Mapped[str] = mapped_column(String(30), default="sent")  # sent, delivered, read, received, failed, skipped_not_configured
+    direction: Mapped[str] = mapped_column(String(10), default="outbound")  # outbound, inbound
     provider_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     sent_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("admin_users.id"), nullable=True)

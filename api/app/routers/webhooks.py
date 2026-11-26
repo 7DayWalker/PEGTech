@@ -1,0 +1,215 @@
+"""
+Inbound WhatsApp webhook (Meta Cloud API).
+
+  GET  /api/webhooks/whatsapp  — Meta's one-time verification handshake.
+  POST /api/webhooks/whatsapp  — incoming message + delivery-status events.
+
+One-time setup in Meta's dashboard (App Dashboard -> WhatsApp ->
+Configuration -> Webhook):
+    Callback URL:   https://<your-domain>/api/webhooks/whatsapp
+    Verify token:   same value as the WHATSAPP_VERIFY_TOKEN env var
+  Then subscribe the "messages" field.
+
+Behavior:
+  - An inbound message is matched to an existing Lead by phone number
+    (last-10-digits comparison, so +234/234/0-prefixed formats all match).
+    If no lead matches, a brand-new 'New' stage lead is created from the
+    WhatsApp contact so nothing gets lost.
+  - Every inbound message is logged to MessageLog (direction='inbound',
+    status='received') and shows up in that lead's Message Center history.
+  - A first inbound message also counts as being 'Contacted' — same rule
+    already applied to a manually-sent message — advancing a brand-new
+    lead from stage 0 to 1.
+  - Delivery/read receipts for messages PEGTech sent are reflected back
+    onto the matching outbound MessageLog row (matched by provider_id).
+  - Webhook deliveries are de-duplicated by WhatsApp's own message id, so
+    Meta's at-least-once retry behavior can never double-log a message.
+  - Always returns 200 quickly once the signature check passes — Meta
+    retries aggressively (and can disable the webhook) on non-200s, so
+    processing errors are swallowed and logged server-side instead of
+    surfaced to the caller.
+"""
+import hashlib
+import hmac
+
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import JSONResponse, PlainTextResponse
+from sqlalchemy.orm import Session
+
+from app import config, models
+from app.db import get_db
+
+router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
+
+
+def _normalize_phone(raw: str | None) -> str:
+    if not raw:
+        return ""
+    return "".join(ch for ch in raw if ch.isdigit())
+
+
+def _phones_match(a: str | None, b: str | None) -> bool:
+    da, db_ = _normalize_phone(a), _normalize_phone(b)
+    if len(da) < 7 or len(db_) < 7:
+        return False
+    return da[-10:] == db_[-10:]
+
+
+@router.get("/whatsapp")
+async def verify_whatsapp_webhook(request: Request):
+    params = request.query_params
+    mode = params.get("hub.mode")
+    token = params.get("hub.verify_token")
+    challenge = params.get("hub.challenge") or ""
+
+    if (
+        mode == "subscribe"
+        and config.WHATSAPP_VERIFY_TOKEN
+        and token
+        and hmac.compare_digest(token, config.WHATSAPP_VERIFY_TOKEN)
+    ):
+        return PlainTextResponse(challenge)
+    return PlainTextResponse("Verification failed.", status_code=403)
+
+
+@router.post("/whatsapp")
+async def receive_whatsapp_webhook(request: Request, db: Session = Depends(get_db)):
+    raw_body = await request.body()
+
+    if config.WHATSAPP_APP_SECRET:
+        signature = request.headers.get("x-hub-signature-256", "")
+        expected = "sha256=" + hmac.new(
+            config.WHATSAPP_APP_SECRET.encode(), raw_body, hashlib.sha256
+        ).hexdigest()
+        if not signature or not hmac.compare_digest(signature, expected):
+            return JSONResponse({"detail": "Invalid signature."}, status_code=403)
+    else:
+        print("whatsapp webhook: WHATSAPP_APP_SECRET not set — skipping signature check.", flush=True)
+
+    try:
+        payload = await request.json()
+        _process_payload(db, payload)
+    except Exception as e:
+        print(f"whatsapp webhook: error processing payload: {e}", flush=True)
+
+    return {"status": "ok"}
+
+
+def _process_payload(db: Session, payload: dict) -> None:
+    if payload.get("object") != "whatsapp_business_account":
+        return
+    for entry in payload.get("entry", []):
+        for change in entry.get("changes", []):
+            if change.get("field") != "messages":
+                continue
+            value = change.get("value", {})
+            _handle_inbound_messages(db, value)
+            _handle_status_updates(db, value)
+
+
+def _find_or_create_lead(db: Session, wa_id: str, profile_name: str | None) -> models.Lead:
+    for lead in db.query(models.Lead).filter(models.Lead.phone.isnot(None)).all():
+        if _phones_match(lead.phone, wa_id):
+            return lead
+
+    lead = models.Lead(
+        name=profile_name or f"WhatsApp +{wa_id}",
+        phone=f"+{wa_id}",
+        source="WhatsApp (inbound)",
+        stage=0,
+        score="WARM",
+        whatsapp_opt_in=True,  # they messaged us first — implied consent
+        country="NG",
+    )
+    db.add(lead)
+    db.commit()
+    db.refresh(lead)
+    return lead
+
+
+def _extract_text(msg: dict) -> str:
+    msg_type = msg.get("type")
+    if msg_type == "text":
+        return msg.get("text", {}).get("body", "")
+    if msg_type in ("image", "video", "audio", "document", "sticker"):
+        caption = (msg.get(msg_type) or {}).get("caption")
+        return caption or f"[{msg_type} received — view in WhatsApp Business app]"
+    if msg_type == "location":
+        loc = msg.get("location", {})
+        return f"[Location shared: {loc.get('latitude')}, {loc.get('longitude')}]"
+    if msg_type == "button":
+        return msg.get("button", {}).get("text") or "[button reply]"
+    if msg_type == "interactive":
+        interactive = msg.get("interactive", {})
+        if interactive.get("type") == "button_reply":
+            return interactive.get("button_reply", {}).get("title", "[button reply]")
+        if interactive.get("type") == "list_reply":
+            return interactive.get("list_reply", {}).get("title", "[list reply]")
+    return f"[Unsupported message type: {msg_type}]"
+
+
+def _handle_inbound_messages(db: Session, value: dict) -> None:
+    messages = value.get("messages") or []
+    if not messages:
+        return
+    contacts = {c.get("wa_id"): (c.get("profile") or {}).get("name") for c in value.get("contacts", [])}
+
+    for msg in messages:
+        wa_id = msg.get("from")
+        msg_id = msg.get("id")
+        if not wa_id or not msg_id:
+            continue
+
+        # De-dupe Meta's at-least-once webhook retries.
+        already_logged = (
+            db.query(models.MessageLog)
+            .filter_by(provider_id=msg_id, direction="inbound")
+            .first()
+        )
+        if already_logged:
+            continue
+
+        lead = _find_or_create_lead(db, wa_id, contacts.get(wa_id))
+        old_stage = lead.stage
+
+        db.add(models.MessageLog(
+            channel="whatsapp",
+            lead_id=lead.id,
+            to_address=lead.phone or f"+{wa_id}",
+            body=_extract_text(msg),
+            trigger="inbound",
+            status="received",
+            direction="inbound",
+            provider_id=msg_id,
+        ))
+
+        # A reply from the lead is at least as strong a signal of contact
+        # as us messaging them first — same rule as the manual-send flow.
+        if old_stage == 0:
+            lead.stage = 1
+
+        db.commit()
+
+
+def _handle_status_updates(db: Session, value: dict) -> None:
+    for status_event in value.get("statuses") or []:
+        msg_id = status_event.get("id")
+        new_status = status_event.get("status")  # sent, delivered, read, failed
+        if not msg_id or new_status not in ("delivered", "read", "failed"):
+            continue
+        log = (
+            db.query(models.MessageLog)
+            .filter_by(provider_id=msg_id, direction="outbound")
+            .first()
+        )
+        if not log:
+            continue
+        # Never downgrade a 'read' receipt back to 'delivered'.
+        if log.status == "read" and new_status == "delivered":
+            continue
+        log.status = new_status
+        if new_status == "failed":
+            errors = status_event.get("errors") or []
+            if errors:
+                log.error = errors[0].get("title") or errors[0].get("message")
+        db.commit()

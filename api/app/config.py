@@ -26,6 +26,15 @@ PEGTECH_EMAIL_FROM = os.getenv("PEGTECH_EMAIL_FROM", "PEGTech <noreply@pegtech.c
 # WhatsApp (Meta Graph API)
 WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
+# Inbound webhook: WHATSAPP_VERIFY_TOKEN must match the "Verify token" you
+# set in Meta App Dashboard -> WhatsApp -> Configuration -> Webhook.
+# WHATSAPP_APP_SECRET is the app's "App Secret" (Basic Settings) used to
+# verify the X-Hub-Signature-256 header on every inbound webhook POST, so
+# nobody but Meta can inject fake messages. Signature check is skipped
+# (logged as a warning) if left empty, so the webhook still works while
+# you're first wiring it up.
+WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
+WHATSAPP_APP_SECRET = os.getenv("WHATSAPP_APP_SECRET", "")
 
 # AI (OpenAI / Anthropic / etc.)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

@@ -3,7 +3,7 @@
  * Backed by /api/admin/{leads|clients}/{id}/email|whatsapp + /messages.
  */
 import { useEffect, useState } from "react";
-import { Mail, MessageCircle, Send, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Mail, MessageCircle, Send, Clock, AlertTriangle, CheckCircle2, CheckCheck, Inbox } from "lucide-react";
 import { Modal } from "./Modal";
 import { Input, Textarea } from "./Input";
 import { Button } from "./Button";
@@ -17,7 +17,8 @@ type MessageLog = {
   subject?: string | null;
   body: string;
   trigger: string;
-  status: "sent" | "failed" | "skipped_not_configured";
+  status: "sent" | "delivered" | "read" | "received" | "failed" | "skipped_not_configured";
+  direction?: "outbound" | "inbound";
   error?: string | null;
   created_at: string;
 };
@@ -37,8 +38,20 @@ type Props = {
 
 const statusBadge: Record<MessageLog["status"], { variant: "success" | "warning" | "default"; label: string }> = {
   sent: { variant: "success", label: "Sent" },
+  delivered: { variant: "success", label: "Delivered" },
+  read: { variant: "success", label: "Read" },
+  received: { variant: "default", label: "Received" },
   failed: { variant: "warning", label: "Failed" },
   skipped_not_configured: { variant: "default", label: "Not configured" },
+};
+
+const statusIcon: Record<MessageLog["status"], React.ElementType | null> = {
+  sent: CheckCircle2,
+  delivered: CheckCircle2,
+  read: CheckCheck,
+  received: null,
+  failed: AlertTriangle,
+  skipped_not_configured: null,
 };
 
 export function MessageCenterModal({ isOpen, onClose, entityType, entityId, entityName, hasEmail, hasPhone, onSent }: Props) {
@@ -162,24 +175,41 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
             <p className="text-sm text-gray-500">No messages sent yet.</p>
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-              {history.map((m) => (
-                <div key={m.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    {m.channel === "email" ? <Mail size={12} className="text-gray-400" /> : <MessageCircle size={12} className="text-gray-400" />}
-                    <span className="text-xs text-gray-400">{m.channel === "email" ? m.subject || "(no subject)" : "WhatsApp"}</span>
-                    <Badge variant={statusBadge[m.status].variant} className="ml-auto text-[10px] px-2 py-0.5">
-                      {m.status === "sent" ? <CheckCircle2 size={10} className="mr-1" /> : m.status === "failed" ? <AlertTriangle size={10} className="mr-1" /> : null}
-                      {statusBadge[m.status].label}
-                    </Badge>
-                    {m.trigger === "stage_change" && (
-                      <Badge variant="default" className="text-[10px] px-2 py-0.5">Auto</Badge>
-                    )}
+              {history.map((m) => {
+                const inbound = m.direction === "inbound";
+                const StatusIcon = statusIcon[m.status];
+                return (
+                  <div
+                    key={m.id}
+                    className={`rounded-xl border p-3 ${
+                      inbound ? "border-gemini-blue/20 bg-gemini-blue/[0.06] ml-0 mr-6" : "border-white/10 bg-white/[0.02] ml-6 mr-0"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      {inbound ? (
+                        <Inbox size={12} className="text-gemini-blue" />
+                      ) : m.channel === "email" ? (
+                        <Mail size={12} className="text-gray-400" />
+                      ) : (
+                        <MessageCircle size={12} className="text-gray-400" />
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {inbound ? "Received" : m.channel === "email" ? m.subject || "(no subject)" : "WhatsApp"}
+                      </span>
+                      <Badge variant={statusBadge[m.status].variant} className="ml-auto text-[10px] px-2 py-0.5">
+                        {StatusIcon && <StatusIcon size={10} className="mr-1" />}
+                        {statusBadge[m.status].label}
+                      </Badge>
+                      {m.trigger === "stage_change" && (
+                        <Badge variant="default" className="text-[10px] px-2 py-0.5">Auto</Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 line-clamp-2">{m.body.replace(/<[^>]+>/g, "")}</p>
+                    <p className="text-[10px] text-gray-600 mt-1">{new Date(m.created_at).toLocaleString()}</p>
+                    {m.error && <p className="text-[10px] text-amber-500 mt-1">{m.error}</p>}
                   </div>
-                  <p className="text-xs text-gray-500 line-clamp-2">{m.body.replace(/<[^>]+>/g, "")}</p>
-                  <p className="text-[10px] text-gray-600 mt-1">{new Date(m.created_at).toLocaleString()}</p>
-                  {m.error && <p className="text-[10px] text-amber-500 mt-1">{m.error}</p>}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
