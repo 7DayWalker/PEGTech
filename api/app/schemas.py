@@ -3,7 +3,7 @@ Pydantic v2 schemas for PEGTech API.
 """
 from datetime import date, datetime
 from typing import List, Optional, Literal
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator
 
 
 # ---------------------------------------------------------------------------
@@ -825,6 +825,14 @@ class MessageLogOut(BaseModel):
     provider_id: Optional[str] = None
     error: Optional[str] = None
     created_at: datetime
+
+    @field_validator("direction", mode="before")
+    @classmethod
+    def _default_direction(cls, v):
+        # Defense-in-depth: a row from before this field existed can still
+        # read back NULL from the DB in edge cases outside the normal
+        # startup backfill — never let that 500 the endpoint.
+        return v or "outbound"
 
     class Config:
         from_attributes = True

@@ -115,6 +115,44 @@ def _relax_orphan_not_null_columns():
                     print(f"auto-migrate: failed to relax {table.name}.{col['name']}: {e}", flush=True)
 
 
+def _backfill_null_defaults():
+    """Backfill NULL values on any column that declares a plain Python-side
+    `default=` on its model.
+
+    `_auto_migrate_missing_columns()` runs a bare `ALTER TABLE ADD COLUMN`
+    with no SQL-level DEFAULT clause, so Postgres leaves every pre-existing
+    row's new column NULL — a model's Python-side `default=` only ever
+    applies to brand-new INSERTs, never to rows that already existed before
+    the column did. Left alone, that silently breaks any endpoint whose
+    response schema requires a non-null value for that field. This runs on
+    every boot (cheap at this app's scale) and is a no-op once a table has
+    no more NULLs left to fill.
+    """
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if table.name not in existing_tables:
+                continue
+            for col in table.columns:
+                default = col.default
+                if default is None or not getattr(default, "is_scalar", False):
+                    continue
+                value = default.arg
+                if not isinstance(value, (str, int, float, bool)):
+                    continue
+                try:
+                    result = conn.execute(
+                        text(f'UPDATE {table.name} SET {col.name} = :v WHERE {col.name} IS NULL'),
+                        {"v": value},
+                    )
+                    if result.rowcount:
+                        print(f"auto-migrate: backfilled {result.rowcount} NULL row(s) in {table.name}.{col.name}", flush=True)
+                except Exception as e:
+                    print(f"auto-migrate: failed to backfill {table.name}.{col.name}: {e}", flush=True)
+
+
 def init_db():
     """Idempotent schema setup: create missing tables, then backfill any
     columns models.py has gained since a table was first created."""
@@ -124,6 +162,7 @@ def init_db():
     Base.metadata.create_all(engine)
     _auto_migrate_missing_columns()
     _relax_orphan_not_null_columns()
+    _backfill_null_defaults()
     print(f"init_db: schema ready in {time.time()-t0:.1f}s", flush=True)
 
     if not DATABASE_URL.startswith("sqlite"):
