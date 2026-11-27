@@ -75,6 +75,8 @@ const FEATURES = [
     title: "Revenue-Leak Audit",
     desc: "AI analysis that finds where your business loses money — slow responses, dead leads, ad waste.",
     icon: BarChart3,
+    link: "/audit",
+    linkLabel: "Run your free audit",
   },
   {
     title: "WhatsApp-First",
@@ -212,6 +214,14 @@ export function Home() {
                   </div>
                   <h3 className="text-lg font-bold text-white mb-3">{f.title}</h3>
                   <p className="text-sm text-gray-400">{f.desc}</p>
+                  {f.link && (
+                    <Link
+                      to={f.link}
+                      className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-gemini-purple hover:text-gemini-pink transition-colors"
+                    >
+                      {f.linkLabel} <ArrowRight size={14} />
+                    </Link>
+                  )}
                 </Card>
               ))}
             </div>

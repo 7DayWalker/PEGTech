@@ -97,7 +97,7 @@ const AI_CAPABILITIES = [
   { name: "Proposal Generation", desc: "Scoped, priced proposals generated from a discovery call in minutes.", icon: FileText },
   { name: "Meeting Assistant", desc: "Automated notes, action items, and follow-ups from every client meeting.", icon: CalendarCheck },
   { name: "Content Generator", desc: "Blog posts, social captions, and ad copy drafted in your brand voice.", icon: PenTool },
-  { name: "Revenue-Leak Audit", desc: "AI analysis that finds where your business loses money — slow replies, dead leads, ad waste.", icon: TrendingDown },
+  { name: "Revenue-Leak Audit", desc: "AI analysis that finds where your business loses money — slow replies, dead leads, ad waste.", icon: TrendingDown, link: "/audit", linkLabel: "Run your free audit" },
 ];
 
 const PROCESS = [
@@ -212,6 +212,14 @@ export function Services() {
                 </div>
                 <h3 className="text-base font-bold text-white mb-2">{cap.name}</h3>
                 <p className="text-sm text-gray-400">{cap.desc}</p>
+                {cap.link && (
+                  <Link
+                    to={cap.link}
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-gemini-purple hover:text-gemini-pink transition-colors"
+                  >
+                    {cap.linkLabel} <ArrowRight size={14} />
+                  </Link>
+                )}
               </Card>
             ))}
           </div>
