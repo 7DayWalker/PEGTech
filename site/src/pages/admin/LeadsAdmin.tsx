@@ -16,7 +16,7 @@ import { MessageCenterModal } from "../../components/MessageCenterModal";
 import { ImportLeadsModal } from "../../components/ImportLeadsModal";
 import {
   ArrowLeft, Plus, Mail, Pencil, Trash2, Phone, MessageSquare,
-  ArrowRight, Trophy, LayoutGrid, Rows3, Upload,
+  ArrowRight, Trophy, LayoutGrid, Rows3, Upload, Sparkles,
 } from "lucide-react";
 
 type Lead = {
@@ -37,7 +37,19 @@ type Lead = {
   notes?: string | null;
   converted_client_id?: number | null;
   has_unread?: boolean;
+  ai_score?: number | null;
+  ai_score_reason?: string | null;
+  ai_score_provider?: string | null;
 };
+
+/** Priority-badge color for an AI score — reuses the same HOT/WARM/COLD
+ * thresholds the backend's rule-based fallback and briefing use, so the
+ * color language stays consistent across the dashboard. */
+function aiScoreClasses(score: number): string {
+  if (score >= 75) return "bg-red-500/10 text-red-400 border-red-500/20";
+  if (score >= 45) return "bg-amber-500/10 text-amber-400 border-amber-500/20";
+  return "bg-white/5 text-gray-400 border-white/10";
+}
 
 const STAGES = ["New", "Contacted", "Qualified", "Proposal", "Won"];
 
@@ -79,6 +91,7 @@ export function LeadsAdmin() {
   const [importOpen, setImportOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [scoringId, setScoringId] = useState<number | null>(null);
 
   function load(opts: { silent?: boolean } = {}) {
     if (!opts.silent) setLoading(true);
@@ -194,6 +207,24 @@ export function LeadsAdmin() {
     if (res.ok) load();
   }
 
+  async function rescoreLead(id: number) {
+    setScoringId(id);
+    try {
+      const res = await api.post(`/api/admin/leads/${id}/score`);
+      if (res.ok) {
+        const updated: Lead = await res.json();
+        setLeads((prev) => prev.map((l) => (l.id === id ? updated : l)));
+        show("Lead re-scored.", "success");
+      } else {
+        show("Couldn't re-score this lead.", "error");
+      }
+    } catch {
+      show("Network error — couldn't re-score lead.", "error");
+    } finally {
+      setScoringId(null);
+    }
+  }
+
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
@@ -276,6 +307,8 @@ export function LeadsAdmin() {
                         onEdit={() => openEdit(l)}
                         onDelete={() => handleDelete(l.id)}
                         onAdvance={() => advanceStage(l)}
+                        onRescore={() => rescoreLead(l.id)}
+                        scoring={scoringId === l.id}
                       />
                     ))
                   )}
@@ -316,6 +349,7 @@ export function LeadsAdmin() {
                         <th className="px-5 py-3 font-medium">Contact</th>
                         <th className="px-5 py-3 font-medium">Service</th>
                         <th className="px-5 py-3 font-medium">Score</th>
+                        <th className="px-5 py-3 font-medium">AI Priority</th>
                         <th className="px-5 py-3 font-medium">Value</th>
                         <th className="px-5 py-3 font-medium">Stage</th>
                         <th className="px-5 py-3 font-medium"></th>
@@ -337,6 +371,26 @@ export function LeadsAdmin() {
                           <td className="px-5 py-3 text-gray-300">{l.service || "—"}</td>
                           <td className="px-5 py-3">
                             <Badge variant={scoreVariant[l.score || "WARM"] || "default"}>{l.score || "WARM"}</Badge>
+                          </td>
+                          <td className="px-5 py-3">
+                            {l.ai_score != null ? (
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border ${aiScoreClasses(l.ai_score)}`}
+                                title={l.ai_score_reason || undefined}
+                              >
+                                {l.ai_score}
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => rescoreLead(l.id)}
+                                disabled={scoringId === l.id}
+                                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gemini-purple transition-colors disabled:opacity-50"
+                                title="Score this lead with AI"
+                              >
+                                <Sparkles size={12} className={scoringId === l.id ? "animate-pulse" : ""} />
+                                {scoringId === l.id ? "Scoring…" : "Score"}
+                              </button>
+                            )}
                           </td>
                           <td className="px-5 py-3 text-gray-300">
                             {l.value_usd ? `$${l.value_usd.toLocaleString()}` : "—"}
@@ -364,6 +418,17 @@ export function LeadsAdmin() {
                                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_2px_rgba(10,10,16,0.9)]" />
                                 )}
                               </button>
+                              {l.ai_score != null && (
+                                <button
+                                  onClick={() => rescoreLead(l.id)}
+                                  disabled={scoringId === l.id}
+                                  className="text-gray-400 hover:text-gemini-purple transition-colors disabled:opacity-50"
+                                  aria-label={`Re-score ${l.name} with AI`}
+                                  title="Re-score with AI"
+                                >
+                                  <Sparkles size={16} className={scoringId === l.id ? "animate-pulse" : ""} />
+                                </button>
+                              )}
                               <button onClick={() => openEdit(l)} className="text-gray-400 hover:text-white transition-colors" aria-label={`Edit ${l.name}`}>
                                 <Pencil size={16} />
                               </button>
@@ -447,13 +512,15 @@ export function LeadsAdmin() {
 }
 
 function LeadCard({
-  lead, onMessage, onEdit, onDelete, onAdvance,
+  lead, onMessage, onEdit, onDelete, onAdvance, onRescore, scoring,
 }: {
   lead: Lead;
   onMessage: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onAdvance: () => void;
+  onRescore: () => void;
+  scoring: boolean;
 }) {
   return (
     <Card padding="sm" className="!p-4">
@@ -475,6 +542,15 @@ function LeadCard({
             {lead.has_unread && (
               <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_2px_rgba(10,10,16,0.9)]" />
             )}
+          </button>
+          <button
+            onClick={onRescore}
+            disabled={scoring}
+            className="p-1 text-gray-500 hover:text-gemini-purple transition-colors disabled:opacity-50"
+            aria-label={`${lead.ai_score != null ? "Re-score" : "Score"} ${lead.name} with AI`}
+            title={lead.ai_score != null ? "Re-score with AI" : "Score with AI"}
+          >
+            <Sparkles size={13} className={scoring ? "animate-pulse" : ""} />
           </button>
           <button onClick={onEdit} className="p-1 text-gray-500 hover:text-white transition-colors" aria-label={`Edit ${lead.name}`}>
             <Pencil size={13} />
@@ -510,6 +586,15 @@ function LeadCard({
           <Badge variant={scoreVariant[lead.score || "WARM"] || "default"} className="text-[10px] px-2 py-0.5 shrink-0">
             {lead.score || "WARM"}
           </Badge>
+          {lead.ai_score != null && (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border shrink-0 ${aiScoreClasses(lead.ai_score)}`}
+              title={lead.ai_score_reason || undefined}
+            >
+              <Sparkles size={9} />
+              {lead.ai_score}
+            </span>
+          )}
         </div>
         {lead.stage < 4 ? (
           <button

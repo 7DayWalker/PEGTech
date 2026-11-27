@@ -8,7 +8,7 @@ import { Card } from "../components/Card";
 import { Container } from "../components/Section";
 import { Badge } from "../components/Badge";
 import { GlowBackground } from "../components/GlowBackground";
-import { Users, Folder, Mail, BarChart3, AlertTriangle, RefreshCw, Sparkles, Flame, Eye, MessageCircle, Siren } from "lucide-react";
+import { Users, Folder, Mail, BarChart3, AlertTriangle, RefreshCw, Sparkles, Flame, Eye, MessageCircle, Siren, TrendingUp } from "lucide-react";
 
 const BRIEFING_ICONS: Record<string, any> = {
   stale_hot_lead: Flame,
@@ -24,6 +24,14 @@ const BRIEFING_COLORS: Record<string, string> = {
   pending_escalation: "text-orange-400",
 };
 
+/** Same HOT/WARM/COLD thresholds as the Leads page's AI priority badge,
+ * so the color language is consistent wherever an ai_score shows up. */
+function aiScoreClasses(score: number): string {
+  if (score >= 75) return "bg-red-500/10 text-red-400 border-red-500/20";
+  if (score >= 45) return "bg-amber-500/10 text-amber-400 border-amber-500/20";
+  return "bg-white/5 text-gray-400 border-white/10";
+}
+
 export function AdminPortal() {
   useTitle("Admin Portal — PEGTech");
   const navigate = useNavigate();
@@ -33,6 +41,8 @@ export function AdminPortal() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [briefing, setBriefing] = useState<any>(null);
   const [briefingLoading, setBriefingLoading] = useState(true);
+  const [topLeads, setTopLeads] = useState<any[]>([]);
+  const [topLeadsLoading, setTopLeadsLoading] = useState(true);
 
   // Auth gating lives here, driven by the shared session state — NOT by
   // whether a single data call happens to succeed. That separation is the
@@ -77,10 +87,21 @@ export function AdminPortal() {
     }).catch(() => setBriefingLoading(false));
   }
 
+  function loadTopLeads() {
+    setTopLeadsLoading(true);
+    api.get("/api/admin/leads/top-priority?limit=5").then(async (res) => {
+      if (res.ok) {
+        setTopLeads(await res.json());
+      }
+      setTopLeadsLoading(false);
+    }).catch(() => setTopLeadsLoading(false));
+  }
+
   useEffect(() => {
     if (user && user.typ === "staff") {
       loadStats();
       loadBriefing();
+      loadTopLeads();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -218,6 +239,45 @@ export function AdminPortal() {
                     </Link>
                   );
                 })}
+              </div>
+            </Card>
+          )}
+
+          {/* Top priority leads — highest AI-scored leads not yet won/lost */}
+          {!topLeadsLoading && topLeads.length > 0 && (
+            <Card padding="lg" className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <TrendingUp size={18} className="text-gemini-purple" />
+                  Top Priority Leads
+                </h3>
+                <Link to="/admin/leads" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+                  View all leads →
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {topLeads.map((lead: any) => (
+                  <Link
+                    key={lead.id}
+                    to="/admin/leads"
+                    className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                  >
+                    <span
+                      className={`inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-bold border shrink-0 ${aiScoreClasses(lead.ai_score)}`}
+                      title={lead.ai_score_reason || undefined}
+                    >
+                      {lead.ai_score}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-200 truncate">
+                        {lead.business_name || lead.name}
+                      </p>
+                      {lead.ai_score_reason && (
+                        <p className="text-xs text-gray-500 truncate">{lead.ai_score_reason}</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
               </div>
             </Card>
           )}

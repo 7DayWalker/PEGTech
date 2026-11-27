@@ -178,6 +178,15 @@ class Lead(Base):
     service: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
     score: Mapped[str] = mapped_column(String(10), default="WARM")  # HOT / WARM / COLD
     ai_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # AI-computed 0-100
+    # Why the AI gave this score (shown as a tooltip/detail next to the
+    # priority badge) — distinct from the staff-controlled `score` tag,
+    # which AI scoring never overwrites.
+    ai_score_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Which provider actually answered (e.g. "gemini"), or NULL when every
+    # chain tier was unreachable and this fell back to the rule-based
+    # scorer — surfaced so staff can tell a real AI read from a stub guess.
+    ai_score_provider: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    ai_scored_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     value_usd: Mapped[float] = mapped_column(Float, default=0)
     stage: Mapped[int] = mapped_column(Integer, default=0)  # 0=new, 1=contacted, 2=qualified, 3=proposal, 4=won
     email: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, index=True)

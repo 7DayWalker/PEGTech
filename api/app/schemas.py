@@ -288,6 +288,12 @@ class LeadOut(LeadBase):
     created_at: datetime
     updated_at: datetime
     converted_client_id: Optional[int] = None
+    # System-managed AI scoring fields — never settable via LeadCreate/
+    # LeadUpdate, only written by the /leads/{id}/score endpoint or the
+    # import background task.
+    ai_score_reason: Optional[str] = None
+    ai_score_provider: Optional[str] = None
+    ai_scored_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

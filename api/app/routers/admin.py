@@ -1,22 +1,37 @@
 """
 Admin routes — staff-only management.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
+import logging
+from datetime import datetime
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Request, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
-from app.db import get_db
+from app.db import get_db, SessionLocal
 from app import models
 from app import schemas
 from app.deps import require_staff, require_admin
 from app import notifications
 from app import lead_import
+from app import lead_scoring
 from app.phone_utils import phones_match
 from app.briefing import build_briefing
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+logger = logging.getLogger("pegtech.admin")
 
 # Plenty for a research spreadsheet with thousands of rows; keeps upload
 # parsing bounded and fast.
 MAX_IMPORT_BYTES = 10 * 1024 * 1024  # 10MB
+
+# AI-scoring a huge batch synchronously would make /leads/import hang far
+# past any reasonable HTTP timeout (each AI call can take several seconds,
+# longer if it falls through multiple chain tiers) — so scoring runs as a
+# background task after the response is sent, capped to this many leads
+# per import so one enormous spreadsheet can't run up the AI bill or the
+# background task's own runtime unbounded. Comfortably covers a normal
+# research-sheet batch (tested against real ~30-40 row sheets); anything
+# beyond this cap can be scored later via the manual re-score button.
+MAX_AUTO_SCORE_PER_IMPORT = 50
 
 
 # ── Dashboard stats ──
@@ -125,6 +140,25 @@ def list_leads(request: Request, db: Session = Depends(get_db), _=Depends(requir
     return leads
 
 
+@router.get("/leads/top-priority", response_model=list[schemas.LeadOut])
+def top_priority_leads(request: Request, limit: int = 5,
+                        db: Session = Depends(get_db), _=Depends(require_staff())):
+    """The Dashboard's \"Top priority leads\" widget — leads with the
+    highest AI score that haven't been won or lost yet. Leads never
+    AI-scored (ai_score IS NULL) are excluded rather than sorted to the
+    bottom with an implicit 0, since \"never scored\" and \"scored 0, a
+    dead end\" are different things a staff member shouldn't confuse."""
+    limit = max(1, min(limit, 20))
+    return (
+        db.query(models.Lead)
+        .filter(models.Lead.ai_score.isnot(None))
+        .filter(models.Lead.stage < 4)
+        .order_by(models.Lead.ai_score.desc())
+        .limit(limit)
+        .all()
+    )
+
+
 def _find_duplicate_lead(existing: list[models.Lead], fields: dict) -> models.Lead | None:
     """Matches a freshly-imported row against leads already in the system,
     so re-uploading an updated/enriched research sheet (e.g. a follow-up
@@ -177,14 +211,44 @@ def _find_duplicate_lead(existing: list[models.Lead], fields: dict) -> models.Le
     return None
 
 
+def _score_leads_background(lead_ids: list[int]) -> None:
+    """Runs after an import's HTTP response has already been sent — each
+    AI call can take several seconds (longer if it falls through chain
+    tiers), so doing this inline would make /leads/import hang well past
+    any reasonable request timeout for anything but a tiny file. Needs its
+    own DB session since the request-scoped one is closed by the time this
+    runs; commits one lead at a time so a mid-batch crash or AI outage
+    doesn't lose the leads already scored before it."""
+    db = SessionLocal()
+    try:
+        for lead_id in lead_ids:
+            lead = db.get(models.Lead, lead_id)
+            if lead is None:
+                continue
+            try:
+                result = lead_scoring.score_lead_ai(lead)
+            except Exception as e:  # noqa: BLE001 — one bad lead must not stop the batch
+                logger.warning("background scoring failed for lead %s: %s", lead_id, e)
+                continue
+            lead.ai_score = result["ai_score"]
+            lead.ai_score_reason = result["reasoning"]
+            lead.ai_score_provider = result["ai_provider"]
+            lead.ai_scored_at = datetime.utcnow()
+            db.commit()
+    finally:
+        db.close()
+
+
 @router.post("/leads/import")
-async def import_leads(request: Request, file: UploadFile = File(...),
+async def import_leads(request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...),
                         db: Session = Depends(get_db), _=Depends(require_staff())):
     """Bulk-populate the Leads pipeline from a research spreadsheet (CSV or
     XLSX) instead of entering businesses one at a time — the primary
     top-of-funnel alongside (or instead of) paid ad campaigns. Re-uploading
     an updated sheet is safe: matching rows enrich the existing lead's
-    blank fields rather than creating duplicates."""
+    blank fields rather than creating duplicates. New and meaningfully-
+    updated leads are AI-scored in the background after this returns (see
+    _score_leads_background), up to MAX_AUTO_SCORE_PER_IMPORT per call."""
     data = await file.read()
     if len(data) > MAX_IMPORT_BYTES:
         raise HTTPException(status_code=413, detail=f"File too large — max {MAX_IMPORT_BYTES // (1024*1024)}MB.")
@@ -205,6 +269,10 @@ async def import_leads(request: Request, file: UploadFile = File(...),
     existing_leads = db.query(models.Lead).all()
     created = updated = skipped = 0
     warnings: list[dict] = []
+    # Leads worth (re-)scoring once this import commits: every newly
+    # created lead, plus any existing lead whose data actually changed
+    # (new notes/phone/email etc. — not just touched with nothing new).
+    to_score: list[int] = []
 
     for row_num, raw_row in enumerate(rows, start=2):  # row 1 is the header
         mapped = lead_import.map_row(raw_row)
@@ -235,24 +303,33 @@ async def import_leads(request: Request, file: UploadFile = File(...),
                     changed = True
             if changed:
                 updated += 1
+                if len(to_score) < MAX_AUTO_SCORE_PER_IMPORT:
+                    to_score.append(match.id)
         else:
             lead = models.Lead(**fields)
             db.add(lead)
             db.flush()  # so later rows in this same file can dedupe against it
             existing_leads.append(lead)
             created += 1
+            if len(to_score) < MAX_AUTO_SCORE_PER_IMPORT:
+                to_score.append(lead.id)
 
         label = fields.get("business_name") or fields.get("name")
         for w in mapped.warnings:
             warnings.append({"row": row_num, "business_name": label, "message": w})
 
     db.commit()
+
+    if to_score:
+        background_tasks.add_task(_score_leads_background, to_score)
+
     return {
         "total_rows": len(rows),
         "created": created,
         "updated": updated,
         "skipped": skipped,
         "warnings": warnings[:50],
+        "ai_scoring_queued": len(to_score),
     }
 
 
@@ -261,6 +338,24 @@ def create_lead(payload: schemas.LeadCreate, request: Request,
                 db: Session = Depends(get_db), _=Depends(require_staff())):
     lead = models.Lead(**payload.model_dump())
     db.add(lead)
+    db.commit()
+    db.refresh(lead)
+    return lead
+
+
+@router.post("/leads/{lead_id}/score", response_model=schemas.LeadOut)
+def rescore_lead(lead_id: int, request: Request,
+                  db: Session = Depends(get_db), _=Depends(require_staff())):
+    """Manual \"Re-score\" button on a single lead — synchronous since
+    it's one AI call, not a batch (unlike the import's background path)."""
+    lead = db.get(models.Lead, lead_id)
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found.")
+    result = lead_scoring.score_lead_ai(lead)
+    lead.ai_score = result["ai_score"]
+    lead.ai_score_reason = result["reasoning"]
+    lead.ai_score_provider = result["ai_provider"]
+    lead.ai_scored_at = datetime.utcnow()
     db.commit()
     db.refresh(lead)
     return lead
