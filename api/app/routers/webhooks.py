@@ -192,6 +192,25 @@ def _extract_text(msg: dict) -> str:
             return interactive.get("button_reply", {}).get("title", "[button reply]")
         if interactive.get("type") == "list_reply":
             return interactive.get("list_reply", {}).get("title", "[list reply]")
+    if msg_type == "reaction":
+        # A tap-react (👍, ❤️, etc.) on one of our messages, not a new
+        # message of its own — WhatsApp still delivers it as a webhook
+        # event with its own message id, so it's logged like any reply.
+        emoji = (msg.get("reaction") or {}).get("emoji")
+        return f"{emoji} (reacted to a message)" if emoji else "Reacted to a message"
+    if msg_type == "contacts":
+        names = [
+            (c.get("name") or {}).get("formatted_name")
+            for c in (msg.get("contacts") or [])
+            if (c.get("name") or {}).get("formatted_name")
+        ]
+        return f"[Shared contact: {', '.join(names)}]" if names else "[Shared a contact card]"
+    if msg_type == "order":
+        order = msg.get("order", {})
+        items = order.get("product_items") or []
+        return f"[Placed an order — {len(items)} item(s)]" if items else "[Placed an order]"
+    if msg_type == "system":
+        return (msg.get("system") or {}).get("body") or "[System notification]"
     return f"[Unsupported message type: {msg_type}]"
 
 
