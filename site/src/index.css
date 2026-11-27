@@ -96,9 +96,13 @@
     @apply glass-card-hover;
   }
 
-  /* Floating glass pill nav */
+  /* Floating glass pill nav. Radius is intentionally NOT baked in here —
+     the nav toggles between a capsule shape (closed / desktop) and a
+     taller rounded-rectangle shape (mobile menu open), and rounded-full
+     on a tall open menu produces a warped stadium/blob shape. Nav.tsx
+     applies the radius itself based on open state. */
   .nav-pill {
-    @apply rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-2xl shadow-2xl;
+    @apply border border-white/10 bg-white/[0.06] backdrop-blur-2xl shadow-2xl;
   }
 
   /* Inputs */

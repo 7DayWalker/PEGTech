@@ -28,7 +28,7 @@ export function Nav() {
 
   return (
     <div className="sticky top-4 z-50 px-4 sm:px-6 lg:px-8">
-      <nav className="nav-pill max-w-7xl mx-auto">
+      <nav className={`nav-pill max-w-7xl mx-auto transition-[border-radius] duration-200 ${open ? "rounded-[28px] bg-dark-900/95" : "rounded-full"}`}>
         <div className="flex items-center justify-between h-[4.5rem] px-5 sm:px-8">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg tracking-tight shrink-0">
             <img src={logoMark} alt="PEGTech" className="h-8 w-8 object-contain" />
@@ -55,7 +55,7 @@ export function Nav() {
                 location.pathname === "/audit" ? "bg-white/10" : "hover:bg-white/5"
               }`}
             >
-              <Sparkles size={14} className="text-gemini-purple" />
+              <Sparkles size={14} className="text-gemini-blue" />
               <span className="text-transparent bg-clip-text bg-gemini-gradient">Free Audit</span>
             </Link>
           </div>
@@ -113,11 +113,11 @@ export function Nav() {
             ))}
             <Link
               to="/audit"
-              className="flex items-center gap-1.5 px-4 py-2.5 text-gemini-purple hover:text-white hover:bg-white/5 rounded-xl transition-colors font-semibold"
+              className="flex items-center gap-1.5 px-4 py-2.5 hover:bg-white/5 rounded-xl transition-colors font-semibold"
               onClick={() => setOpen(false)}
             >
-              <Sparkles size={15} />
-              Free Audit
+              <Sparkles size={15} className="text-gemini-blue" />
+              <span className="text-transparent bg-clip-text bg-gemini-gradient">Free Audit</span>
             </Link>
             <Link
               to="/book"
