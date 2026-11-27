@@ -39,6 +39,7 @@ from sqlalchemy.orm import Session
 from app import config, models
 from app.db import get_db
 from app.integrations import whatsapp_client as wa_client
+from app.phone_utils import phones_match as _phones_match
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
@@ -67,19 +68,6 @@ _UNSUPPORTED_SUBTYPE_LABELS = {
     "poll_creation": "\U0001F4CA Sent a poll (polls aren't supported here — ask them to reply with text)",
     "poll_update": "\U0001F4CA Updated a poll",
 }
-
-
-def _normalize_phone(raw: str | None) -> str:
-    if not raw:
-        return ""
-    return "".join(ch for ch in raw if ch.isdigit())
-
-
-def _phones_match(a: str | None, b: str | None) -> bool:
-    da, db_ = _normalize_phone(a), _normalize_phone(b)
-    if len(da) < 7 or len(db_) < 7:
-        return False
-    return da[-10:] == db_[-10:]
 
 
 @router.get("/whatsapp")

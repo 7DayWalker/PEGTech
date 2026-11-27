@@ -13,9 +13,10 @@ import { Modal } from "../../components/Modal";
 import { Input, Select, Textarea } from "../../components/Input";
 import { GlowBackground } from "../../components/GlowBackground";
 import { MessageCenterModal } from "../../components/MessageCenterModal";
+import { ImportLeadsModal } from "../../components/ImportLeadsModal";
 import {
   ArrowLeft, Plus, Mail, Pencil, Trash2, Phone, MessageSquare,
-  ArrowRight, Trophy, LayoutGrid, Rows3,
+  ArrowRight, Trophy, LayoutGrid, Rows3, Upload,
 } from "lucide-react";
 
 type Lead = {
@@ -75,6 +76,7 @@ export function LeadsAdmin() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [messagingLead, setMessagingLead] = useState<Lead | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
@@ -232,6 +234,10 @@ export function LeadsAdmin() {
               <Rows3 size={14} /> List
             </button>
           </div>
+          <Button variant="outline" onClick={() => setImportOpen(true)} size="sm">
+            <Upload size={16} />
+            Import
+          </Button>
           <Button onClick={openCreate} size="sm">
             <Plus size={16} />
             New Lead
@@ -430,6 +436,12 @@ export function LeadsAdmin() {
           onSent={load}
         />
       )}
+
+      <ImportLeadsModal
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImported={() => load({ silent: true })}
+      />
     </div>
   );
 }

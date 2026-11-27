@@ -1,15 +1,21 @@
 """
 Admin routes — staff-only management.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from app.db import get_db
 from app import models
 from app import schemas
 from app.deps import require_staff, require_admin
 from app import notifications
+from app import lead_import
+from app.phone_utils import phones_match
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+# Plenty for a research spreadsheet with thousands of rows; keeps upload
+# parsing bounded and fast.
+MAX_IMPORT_BYTES = 10 * 1024 * 1024  # 10MB
 
 
 # ── Dashboard stats ──
@@ -110,6 +116,103 @@ def list_leads(request: Request, db: Session = Depends(get_db), _=Depends(requir
     for l in leads:
         l.has_unread = l.id in unread
     return leads
+
+
+def _find_duplicate_lead(existing: list[models.Lead], fields: dict) -> models.Lead | None:
+    """Matches a freshly-imported row against leads already in the system,
+    so re-uploading an updated research sheet enriches existing leads
+    instead of creating duplicates. Checked in order of reliability: phone
+    number, then email, then an exact business name + city match."""
+    phone = fields.get("phone")
+    if phone:
+        for lead in existing:
+            if lead.phone and phones_match(lead.phone, phone):
+                return lead
+
+    email = fields.get("email")
+    if email:
+        email_l = email.strip().lower()
+        for lead in existing:
+            if lead.email and lead.email.strip().lower() == email_l:
+                return lead
+
+    business_name = fields.get("business_name")
+    if business_name:
+        bn_l = business_name.strip().lower()
+        city_l = (fields.get("city") or "").strip().lower()
+        for lead in existing:
+            if (lead.business_name or "").strip().lower() == bn_l and (lead.city or "").strip().lower() == city_l:
+                return lead
+
+    return None
+
+
+@router.post("/leads/import")
+async def import_leads(request: Request, file: UploadFile = File(...),
+                        db: Session = Depends(get_db), _=Depends(require_staff())):
+    """Bulk-populate the Leads pipeline from a research spreadsheet (CSV or
+    XLSX) instead of entering businesses one at a time — the primary
+    top-of-funnel alongside (or instead of) paid ad campaigns. Re-uploading
+    an updated sheet is safe: matching rows enrich the existing lead's
+    blank fields rather than creating duplicates."""
+    data = await file.read()
+    if len(data) > MAX_IMPORT_BYTES:
+        raise HTTPException(status_code=413, detail=f"File too large — max {MAX_IMPORT_BYTES // (1024*1024)}MB.")
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty file.")
+
+    try:
+        rows = lead_import.parse_spreadsheet(data, file.filename or "")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Couldn't read this as a CSV or Excel file: {e}")
+
+    if not rows:
+        raise HTTPException(
+            status_code=400,
+            detail="No data rows found — make sure the file has a header row followed by at least one row of data.",
+        )
+
+    existing_leads = db.query(models.Lead).all()
+    created = updated = skipped = 0
+    warnings: list[dict] = []
+
+    for row_num, raw_row in enumerate(rows, start=2):  # row 1 is the header
+        mapped = lead_import.map_row(raw_row)
+        if mapped is None:
+            skipped += 1
+            continue
+
+        fields = mapped.fields
+        match = _find_duplicate_lead(existing_leads, fields)
+        if match is not None:
+            changed = False
+            for key, value in fields.items():
+                if not value or key == "stage":
+                    continue
+                if not getattr(match, key, None):
+                    setattr(match, key, value)
+                    changed = True
+            if changed:
+                updated += 1
+        else:
+            lead = models.Lead(**fields)
+            db.add(lead)
+            db.flush()  # so later rows in this same file can dedupe against it
+            existing_leads.append(lead)
+            created += 1
+
+        label = fields.get("business_name") or fields.get("name")
+        for w in mapped.warnings:
+            warnings.append({"row": row_num, "business_name": label, "message": w})
+
+    db.commit()
+    return {
+        "total_rows": len(rows),
+        "created": created,
+        "updated": updated,
+        "skipped": skipped,
+        "warnings": warnings[:50],
+    }
 
 
 @router.post("/leads", response_model=schemas.LeadOut)
