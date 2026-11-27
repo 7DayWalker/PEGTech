@@ -10,6 +10,7 @@ from app.deps import require_staff, require_admin
 from app import notifications
 from app import lead_import
 from app.phone_utils import phones_match
+from app.briefing import build_briefing
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -29,6 +30,12 @@ def admin_stats(request: Request, db: Session = Depends(get_db), _=Depends(requi
         "pending_escalations": db.query(models.Escalation).filter_by(status="queued").count(),
         "total_users": db.query(models.AdminUser).count() + db.query(models.ClientUser).count(),
     }
+
+
+# ── Daily Briefing — "what needs attention today" ──
+@router.get("/briefing")
+def admin_briefing(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
+    return build_briefing(db)
 
 
 # ── Staff directory (for assignment dropdowns) ──

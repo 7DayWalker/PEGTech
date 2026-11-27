@@ -8,7 +8,21 @@ import { Card } from "../components/Card";
 import { Container } from "../components/Section";
 import { Badge } from "../components/Badge";
 import { GlowBackground } from "../components/GlowBackground";
-import { Users, Folder, Mail, BarChart3, AlertTriangle, RefreshCw } from "lucide-react";
+import { Users, Folder, Mail, BarChart3, AlertTriangle, RefreshCw, Sparkles, Flame, Eye, MessageCircle, Siren } from "lucide-react";
+
+const BRIEFING_ICONS: Record<string, any> = {
+  stale_hot_lead: Flame,
+  import_flag: Eye,
+  unread_message: MessageCircle,
+  pending_escalation: Siren,
+};
+
+const BRIEFING_COLORS: Record<string, string> = {
+  stale_hot_lead: "text-red-400",
+  import_flag: "text-yellow-400",
+  unread_message: "text-blue-400",
+  pending_escalation: "text-orange-400",
+};
 
 export function AdminPortal() {
   useTitle("Admin Portal — PEGTech");
@@ -17,6 +31,8 @@ export function AdminPortal() {
   const [stats, setStats] = useState<any>(null);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [briefing, setBriefing] = useState<any>(null);
+  const [briefingLoading, setBriefingLoading] = useState(true);
 
   // Auth gating lives here, driven by the shared session state — NOT by
   // whether a single data call happens to succeed. That separation is the
@@ -51,9 +67,20 @@ export function AdminPortal() {
     });
   }
 
+  function loadBriefing() {
+    setBriefingLoading(true);
+    api.get("/api/admin/briefing").then(async (res) => {
+      if (res.ok) {
+        setBriefing(await res.json());
+      }
+      setBriefingLoading(false);
+    }).catch(() => setBriefingLoading(false));
+  }
+
   useEffect(() => {
     if (user && user.typ === "staff") {
       loadStats();
+      loadBriefing();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -152,6 +179,48 @@ export function AdminPortal() {
               </Card>
             ))}
           </div>
+
+          {/* Daily Briefing — "what needs attention today" */}
+          {!briefingLoading && briefing && briefing.items?.length > 0 && (
+            <Card padding="lg" className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Sparkles size={18} className="text-gemini-purple" />
+                  Daily Briefing
+                </h3>
+                <span className="text-xs text-gray-500">
+                  {briefing.items.length} item{briefing.items.length === 1 ? "" : "s"} need attention
+                </span>
+              </div>
+              {briefing.ai_summary && (
+                <p className="text-sm text-gray-300 mb-4 pb-4 border-b border-white/10">
+                  {briefing.ai_summary}
+                </p>
+              )}
+              <div className="space-y-2">
+                {briefing.items.slice(0, 8).map((item: any, idx: number) => {
+                  const Icon = BRIEFING_ICONS[item.type] || AlertTriangle;
+                  const color = BRIEFING_COLORS[item.type] || "text-gray-400";
+                  const to = item.lead_id ? "/admin/leads" : item.client_id ? "/admin/clients" : "/admin/leads";
+                  return (
+                    <Link
+                      key={idx}
+                      to={to}
+                      className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors"
+                    >
+                      <div className={`w-7 h-7 rounded-lg bg-dark-700 flex items-center justify-center shrink-0 ${color}`}>
+                        <Icon size={14} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-200 truncate">{item.title}</p>
+                        {item.detail && <p className="text-xs text-gray-500 truncate">{item.detail}</p>}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
 
           {/* Quick actions */}
           <Card padding="lg" className="mb-8">

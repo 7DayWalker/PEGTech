@@ -3,7 +3,7 @@ Domain logic — pure and unit-testable, including AI service helpers.
 """
 from datetime import date, timedelta, timezone
 from typing import List, Tuple, Optional
-from app.config import BUSINESS_DAYS, SLOTS, AI_DEFAULT_MODEL
+from app.config import BUSINESS_DAYS, SLOTS
 
 
 # ── Revenue-Leak Audit model (audit-v1) ──

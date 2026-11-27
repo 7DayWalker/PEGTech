@@ -36,10 +36,37 @@ WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
 WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
 WHATSAPP_APP_SECRET = os.getenv("WHATSAPP_APP_SECRET", "")
 
-# AI (OpenAI / Anthropic / etc.)
+# AI — provider-agnostic, with a priority-ordered fallback chain so one
+# vendor's outage/rate-limit/deprecation never takes down an AI feature.
+# Each key is independently optional; the chain below only uses the tiers
+# whose provider has a key configured, in the order given, finally
+# dropping to a rule-based stub (handled in ai_client.py, not here) if
+# every provider in the chain fails.
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-AI_DEFAULT_MODEL = os.getenv("AI_DEFAULT_MODEL", "gpt-4o-mini")
+
+# Comma-separated "provider:model" pairs, tried in order. Kept in an env
+# var rather than hardcoded because model IDs get renamed/deprecated by
+# vendors every few months — changing the chain should never need a
+# deploy. Default favors Gemini (flagship -> mid -> lite) since that's
+# the provider actually configured for this project; OpenAI/Anthropic
+# tiers are harmless no-ops here until their keys are set, since
+# ai_client.py skips any tier whose provider has no key.
+AI_FALLBACK_CHAIN = os.getenv(
+    "AI_FALLBACK_CHAIN",
+    "gemini:gemini-pro-latest,gemini:gemini-flash-latest,gemini:gemini-flash-lite-latest,"
+    "openai:gpt-4o-mini,anthropic:claude-3-5-haiku-20241022",
+)
+# Note on the Gemini tiers above: "-latest" aliases (rather than pinned
+# versions like gemini-2.5-pro) are Google's own recommended way to avoid
+# hardcoding a model ID that gets deprecated out from under you — Google
+# points the alias at a new model generation on their own schedule. Also
+# confirmed live: a free-tier Gemini key can have literally zero quota on
+# the Pro tier (HTTP 429) while Flash tiers work fine, and any tier can
+# return a transient HTTP 503 under high demand — exactly the two failure
+# modes this fallback chain exists to route around without the whole
+# feature going down.
 
 # Captcha (Cloudflare Turnstile)
 TURNSTILE_SECRET = os.getenv("TURNSTILE_SECRET", "")
