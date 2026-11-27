@@ -1,5 +1,5 @@
 /** Booking page — schedule a consultation. */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTitle } from "../lib/useTitle";
 import { api } from "../lib/api";
@@ -35,10 +35,35 @@ export function Book() {
     slot: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [openSlots, setOpenSlots] = useState<string[] | null>(null);
 
   function update<K extends keyof typeof form>(key: K, value: string) {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: value, ...(key === "day" ? { slot: "" } : {}) }));
   }
+
+  // Query real availability for the chosen day — previously this form
+  // showed the full static slot list regardless of what was already
+  // booked, so a visitor could pick a taken slot and only find out on
+  // submit (409).
+  useEffect(() => {
+    if (!form.day) {
+      setOpenSlots(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get(`/api/public/bookings/availability?day=${encodeURIComponent(form.day)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setOpenSlots(Array.isArray(data?.[form.day]) ? data[form.day] : SLOTS);
+      })
+      .catch(() => {
+        if (!cancelled) setOpenSlots(SLOTS);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.day]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,6 +73,8 @@ export function Book() {
       if (res.ok) {
         show("Booking confirmed! We'll send a confirmation email shortly.", "success");
         navigate("/");
+      } else if (res.status === 409) {
+        show("That slot was just taken — please pick a different time.", "error");
       } else {
         show("Failed to book. Please try again.", "error");
       }
@@ -134,11 +161,15 @@ export function Book() {
                     label="Preferred time"
                     value={form.slot}
                     onChange={(e) => update("slot", e.target.value)}
+                    disabled={!form.day}
                   >
-                    <option value="">Select a time</option>
-                    {SLOTS.map((s) => (
+                    <option value="">{form.day ? "Select a time" : "Pick a date first"}</option>
+                    {(openSlots ?? SLOTS).map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
+                    {openSlots !== null && openSlots.length === 0 && (
+                      <option value="" disabled>No open slots that day</option>
+                    )}
                   </Select>
                 </div>
                 <Button

@@ -72,9 +72,29 @@ def create_booking(payload: schemas.BookingCreate, db: Session = Depends(get_db)
 
 
 @router.get("/bookings/availability")
-def booking_availability(day: str):
+def booking_availability(day: str, db: Session = Depends(get_db)):
     target = d.fromisoformat(day)
-    return availability(target)
+    open_slots = availability(target)
+    # `availability()` returns the full static SLOTS list for every
+    # business day — it has no notion of what's already booked. Filter
+    # those out here, in one query across the whole window, so the
+    # response actually reflects real availability (this previously let a
+    # visitor pick an already-taken slot and only discover the conflict on
+    # submit, via the 409 below).
+    window_start = d.fromisoformat(min(open_slots))
+    window_end = d.fromisoformat(max(open_slots))
+    rows = (
+        db.query(models.Booking.day, models.Booking.slot)
+        .filter(models.Booking.day >= window_start, models.Booking.day <= window_end)
+        .all()
+    )
+    booked: dict[str, set[str]] = {}
+    for booked_day, booked_slot in rows:
+        booked.setdefault(booked_day.isoformat(), set()).add(booked_slot)
+    return {
+        day_str: [slot for slot in slots if slot not in booked.get(day_str, set())]
+        for day_str, slots in open_slots.items()
+    }
 
 
 @router.get("/careers/roles")
