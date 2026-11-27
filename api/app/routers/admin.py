@@ -120,9 +120,19 @@ def list_leads(request: Request, db: Session = Depends(get_db), _=Depends(requir
 
 def _find_duplicate_lead(existing: list[models.Lead], fields: dict) -> models.Lead | None:
     """Matches a freshly-imported row against leads already in the system,
-    so re-uploading an updated research sheet enriches existing leads
-    instead of creating duplicates. Checked in order of reliability: phone
-    number, then email, then an exact business name + city match."""
+    so re-uploading an updated/enriched research sheet (e.g. a follow-up
+    email-finding pass on the same business list) fills in the gaps on
+    existing leads instead of creating duplicates. Checked in order of
+    reliability: phone number, then email, then an exact business name
+    match on its own.
+
+    Deliberately NOT gated on city/address matching too: different research
+    passes over the same business routinely carry different (or no) city
+    data — e.g. one sheet has a "Tulsa metro" area label, a later one has
+    the exact street address's city ("Owasso") — so requiring both to agree
+    would silently re-create the same business as a second lead instead of
+    enriching the first one, which defeats the entire point of safe
+    re-uploads."""
     phone = fields.get("phone")
     if phone:
         for lead in existing:
@@ -139,9 +149,8 @@ def _find_duplicate_lead(existing: list[models.Lead], fields: dict) -> models.Le
     business_name = fields.get("business_name")
     if business_name:
         bn_l = business_name.strip().lower()
-        city_l = (fields.get("city") or "").strip().lower()
         for lead in existing:
-            if (lead.business_name or "").strip().lower() == bn_l and (lead.city or "").strip().lower() == city_l:
+            if (lead.business_name or "").strip().lower() == bn_l:
                 return lead
 
     return None
@@ -188,6 +197,17 @@ async def import_leads(request: Request, file: UploadFile = File(...),
             changed = False
             for key, value in fields.items():
                 if not value or key == "stage":
+                    continue
+                if key == "notes":
+                    # Research notes accumulate across re-uploads (e.g. a
+                    # later email-enrichment pass on the same business)
+                    # rather than only filling in if blank, so later
+                    # findings aren't silently lost once a lead has any
+                    # notes at all.
+                    current_notes = (match.notes or "").strip()
+                    if value not in current_notes:
+                        match.notes = f"{current_notes}\n\n{value}".strip() if current_notes else value
+                        changed = True
                     continue
                 if not getattr(match, key, None):
                     setattr(match, key, value)

@@ -30,20 +30,41 @@ COLUMN_SYNONYMS: dict[str, set[str]] = {
         "phone", "phonenumber", "mobile", "mobilenumber", "whatsapp", "whatsappnumber",
         "tel", "telephone", "cell", "cellphone", "contactnumber", "number",
     },
-    "email": {"email", "emailaddress", "mail", "contactemail", "e-mail"},
+    "email": {
+        "email", "emailaddress", "mail", "contactemail", "e-mail",
+        "candidateemail", "foundemail", "emailfound", "discoveredemail",
+    },
     "website": {"website", "site", "url", "web", "weblink", "homepage"},
     "address": {"address", "streetaddress", "fulladdress", "location", "addr"},
     "city": {"city", "town"},
-    "state": {"state", "province", "region"},
+    "state": {"state", "province"},
     "country": {"country"},
-    "service": {"service", "industry", "category", "niche", "businesstype", "sector", "type"},
+    "service": {"service", "industry", "category", "niche", "businesstype", "sector", "type", "googlecategory"},
     "source": {"source", "leadsource", "researchsource"},
     "notes": {"notes", "note", "comments", "comment", "description", "remarks", "research"},
     "score": {"score", "leadscore", "priority", "temperature", "temp"},
     "value_usd": {"value", "valueusd", "dealvalue", "estimatedvalue", "potentialvalue", "budget", "estvalue"},
+    # Distinct from `score` (HOT/WARM/COLD deal temperature) — this is
+    # specifically "how sure are we this email address is correct",
+    # matching an email-finding workflow's own Confidence column.
+    "email_confidence": {"confidence", "emailconfidence", "emailfoundconfidence"},
 }
 
 _VALID_SCORES = {"HOT", "WARM", "COLD"}
+
+# Columns we don't have a dedicated Lead field for, but shouldn't just
+# throw away — folded into the notes block instead so a staff member
+# picking up a cold lead sees the full research trail. Keyed by the
+# ALREADY-NORMALIZED header; value is a human label.
+_NOTES_CONTEXT_LABELS: dict[str, str] = {
+    "sourcequery": "Found via search",
+    "sourcepage": "Result page",
+    "sourceschecked": "Sources checked",
+    "status": "Email search status",
+    "verified": "Email verified",
+    "nextaction": "Next action",
+    "unclaimedlistingflag": "Unclaimed Google listing",
+}
 
 # Keep these aligned with the column widths on models.Lead.
 _MAX_LEN = {
@@ -134,6 +155,79 @@ def _lookup(row_normalized: dict[str, str], canonical: str) -> str:
     return ""
 
 
+_SCOPE_SUFFIX_RE = re.compile(r"\s+(metro|city|area|region)$", re.IGNORECASE)
+_EMPTY_WEBSITE_VALUES = {"missing or empty", "missing", "empty", "n/a", "none", "null", "-"}
+# Matches a standard US "Street, City, ST ZIP" address so City/State can be
+# recovered even when a sheet only has one combined Address column.
+_US_ADDRESS_RE = re.compile(r"^(?P<street>.+),\s*(?P<city>[^,]+),\s*(?P<state>[A-Za-z]{2})\s*(?P<zip>\d{5}(?:-\d{4})?)?$")
+
+
+def _parse_us_address(address: str) -> tuple[str | None, str | None]:
+    """Best-effort split of a 'Street, City, ST ZIP' address into
+    (city, state). Returns (None, None) if it doesn't look like that shape
+    (e.g. 'Address not published on Google Maps')."""
+    m = _US_ADDRESS_RE.match(address.strip())
+    if not m:
+        return None, None
+    return m.group("city").strip(), m.group("state").strip().upper()
+
+
+_WEBSITE_CHECK_WARNINGS = {
+    "website_found": "Independent web check found an existing website for this business — may not fit a no-website campaign.",
+    "out_of_business": "Independent web check flags this business as possibly out of business — verify before reaching out.",
+}
+
+
+def _build_notes(normalized: dict[str, str]) -> tuple[str | None, list[str]]:
+    """Folds spreadsheet columns that don't have a dedicated Lead field
+    (ratings, research trail, website-check result, etc.) into a readable
+    notes block instead of silently dropping them, and surfaces anything
+    worth a human double-checking (e.g. the business already appears to
+    have a website) as an import warning."""
+    warnings: list[str] = []
+    context: list[str] = []
+
+    explicit_notes = _lookup(normalized, "notes")
+
+    rating = normalized.get("rating")
+    review_count = normalized.get("reviewcount")
+    if rating:
+        context.append(f"Google rating: {rating}\u2605" + (f" ({review_count} reviews)" if review_count else ""))
+
+    web_check = normalized.get("independentwebcheck")
+    if web_check:
+        context.append(f"Website check: {web_check}")
+        warning = _WEBSITE_CHECK_WARNINGS.get(web_check.strip().lower())
+        if warning:
+            warnings.append(warning)
+
+    maps_url = normalized.get("googlemapsurl")
+    if maps_url:
+        context.append(f"Google Maps: {maps_url}")
+
+    for key, label in _NOTES_CONTEXT_LABELS.items():
+        value = normalized.get(key)
+        if not value:
+            continue
+        if key == "sourceschecked":
+            value = value[:500]
+        if key == "sourcequery":
+            page = normalized.get("sourcepage")
+            context.append(f'{label}: "{value}"' + (f" (result #{page})" if page else ""))
+            continue
+        if key == "sourcepage":
+            continue  # folded into sourcequery above
+        context.append(f"{label}: {value}")
+
+    parts = []
+    if explicit_notes:
+        parts.append(explicit_notes)
+    if context:
+        parts.append("Research context:\n" + "\n".join(f"- {c}" for c in context))
+    notes = "\n\n".join(parts) if parts else None
+    return notes, warnings
+
+
 @dataclass
 class MappedLead:
     fields: dict
@@ -171,6 +265,41 @@ def map_row(row: dict[str, str]) -> MappedLead | None:
     except ValueError:
         value_usd = 0.0
 
+    # City/State, in order of how much we trust the source: an explicit
+    # column first, then parsed out of a full street address if there's one
+    # (precise), then a "Scope" column (e.g. "Tulsa metro") from Google-
+    # Maps-style research exports as a last, approximate resort.
+    city = _lookup(normalized, "city")
+    state = _lookup(normalized, "state")
+    address_value = _lookup(normalized, "address")
+    if (not city or not state) and address_value:
+        addr_city, addr_state = _parse_us_address(address_value)
+        if not city and addr_city:
+            city = addr_city
+        if not state and addr_state:
+            state = addr_state
+    if not city:
+        scope_raw = normalized.get("scope")
+        if scope_raw:
+            derived = _SCOPE_SUFFIX_RE.sub("", scope_raw).strip()
+            if derived:
+                city = derived
+
+    # A "Serper Website Field" (or similar raw scraper output) sometimes
+    # holds a real detected URL and sometimes a placeholder like "missing
+    # or empty" — only trust it as a website if it isn't one of those.
+    website = _lookup(normalized, "website")
+    if not website:
+        serper_field = normalized.get("serperwebsitefield")
+        if serper_field and serper_field.strip().lower() not in _EMPTY_WEBSITE_VALUES:
+            website = serper_field
+
+    explicit_confidence = _lookup(normalized, "email_confidence")
+    email_confidence = explicit_confidence.strip().lower()[:20] if explicit_confidence else ("unverified" if email else "none")
+
+    notes, context_warnings = _build_notes(normalized)
+    warnings.extend(context_warnings)
+
     def clamp(field_name: str, value: str) -> str | None:
         if not value:
             return None
@@ -187,15 +316,15 @@ def map_row(row: dict[str, str]) -> MappedLead | None:
         "stage": 0,
         "email": clamp("email", email),
         "phone": clamp("phone", phone),
-        "address": clamp("address", _lookup(normalized, "address")),
-        "city": clamp("city", _lookup(normalized, "city")),
-        "state": clamp("state", _lookup(normalized, "state")),
+        "address": clamp("address", address_value),
+        "city": clamp("city", city),
+        "state": clamp("state", state),
         "country": clamp("country", _lookup(normalized, "country")) or "US",
-        "website": clamp("website", _lookup(normalized, "website")),
-        "email_confidence": "unverified" if email else "none",
+        "website": clamp("website", website),
+        "email_confidence": email_confidence,
         "whatsapp_opt_in": False,
         "email_opt_in": False,
         "opt_out": False,
-        "notes": _lookup(normalized, "notes") or None,
+        "notes": notes,
     }
     return MappedLead(fields=fields, warnings=warnings)
