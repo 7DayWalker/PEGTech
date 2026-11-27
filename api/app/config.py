@@ -68,6 +68,14 @@ AI_FALLBACK_CHAIN = os.getenv(
 # modes this fallback chain exists to route around without the whole
 # feature going down.
 
+# Public, unauthenticated AI CSR chat (/api/chat/csr) is the one surface a
+# bad actor can hit directly to run up the AI bill — rate-limited per
+# client IP. Tunable via env without a deploy; defaults are generous for
+# a real visitor conversation (a human can't type 20 messages in under a
+# minute) while still capping a scripted abuse loop.
+CSR_RATE_LIMIT_MAX = int(os.getenv("CSR_RATE_LIMIT_MAX", "20"))
+CSR_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("CSR_RATE_LIMIT_WINDOW_SECONDS", "300"))
+
 # Captcha (Cloudflare Turnstile)
 TURNSTILE_SECRET = os.getenv("TURNSTILE_SECRET", "")
 

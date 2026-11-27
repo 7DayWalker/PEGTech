@@ -20,7 +20,6 @@ import { ProjectsAdmin } from "./pages/admin/ProjectsAdmin";
 import { LeadsAdmin } from "./pages/admin/LeadsAdmin";
 import { AuditReportsAdmin } from "./pages/admin/AuditReportsAdmin";
 import { NotFound } from "./pages/NotFound";
-import { ChatWidget } from "./components/ChatWidget";
 
 function App() {
   return (
@@ -47,7 +46,6 @@ function App() {
           <Route path="/admin/audits" element={<AuditReportsAdmin />} />
           <Route path="*" element={<NotFound />} />
         </Route>
-        <Route path="/chat-widget" element={<ChatWidget />} />
       </Routes>
     </Router>
   );

@@ -32,7 +32,17 @@ export function ChatWidget() {
         session_id: sessionId,
         history: messages,
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 429) {
+        show(data.detail || "You're sending messages a bit fast — please wait a moment.", "error");
+        return;
+      }
+      if (!res.ok || !data.response) {
+        show("AI assistant temporarily unavailable. Please try again.", "error");
+        return;
+      }
+
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: data.response },
