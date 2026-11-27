@@ -2,13 +2,15 @@
  * Shared compose + history modal for emailing/WhatsApp-ing a lead or client.
  * Backed by /api/admin/{leads|clients}/{id}/email|whatsapp + /messages.
  */
-import { useEffect, useState } from "react";
-import { Mail, MessageCircle, Send, Clock, AlertTriangle, CheckCircle2, CheckCheck, Inbox } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Mail, MessageCircle, Send, Clock, AlertTriangle, CheckCircle2, CheckCheck, Inbox, Smile, Paperclip, X, FileText } from "lucide-react";
 import { Modal } from "./Modal";
 import { Input, Textarea } from "./Input";
 import { Button } from "./Button";
 import { Badge } from "./Badge";
-import { api } from "../lib/api";
+import { EmojiPicker } from "./EmojiPicker";
+import { MediaBubble } from "./MediaBubble";
+import { api, uploadFile } from "../lib/api";
 import { useToast } from "../lib/Toast";
 
 type MessageLog = {
@@ -19,6 +21,8 @@ type MessageLog = {
   trigger: string;
   status: "sent" | "delivered" | "read" | "received" | "failed" | "skipped_not_configured";
   direction?: "outbound" | "inbound";
+  media_id?: number | null;
+  media_type?: string | null;
   error?: string | null;
   created_at: string;
 };
@@ -62,6 +66,11 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
   const [sending, setSending] = useState(false);
   const [history, setHistory] = useState<MessageLog[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_ATTACHMENT_BYTES = 16 * 1024 * 1024; // keep in sync with api/app/routers/messaging.py
 
   function loadHistory() {
     setLoadingHistory(true);
@@ -77,23 +86,47 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
       loadHistory();
       setSubject("");
       setBody("");
+      setAttachment(null);
+      setShowEmoji(false);
       setTab(hasEmail ? "email" : "whatsapp");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, entityId]);
 
+  function handlePickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow picking the same file again later
+    if (!file) return;
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      show(`File too large — max ${MAX_ATTACHMENT_BYTES / (1024 * 1024)}MB.`, "error");
+      return;
+    }
+    setAttachment(file);
+  }
+
+  function insertEmoji(emoji: string) {
+    setBody((prev) => prev + emoji);
+    setShowEmoji(false);
+  }
+
   async function handleSend() {
-    if (!body.trim()) return;
+    if (!body.trim() && !attachment) return;
     setSending(true);
     try {
-      const path = tab === "email" ? "email" : "whatsapp";
-      const payload = tab === "email" ? { subject, body } : { message: body };
-      const res = await api.post(`/api/admin/${entityType}/${entityId}/${path}`, payload);
+      let res: Response;
+      if (tab === "whatsapp" && attachment) {
+        res = await uploadFile(`/api/admin/${entityType}/${entityId}/whatsapp-media`, attachment, { caption: body });
+      } else {
+        const path = tab === "email" ? "email" : "whatsapp";
+        const payload = tab === "email" ? { subject, body } : { message: body };
+        res = await api.post(`/api/admin/${entityType}/${entityId}/${path}`, payload);
+      }
       const data = await res.json().catch(() => null);
       if (res.ok && data?.status === "sent") {
         show(`${tab === "email" ? "Email" : "WhatsApp message"} sent.`, "success");
         setSubject("");
         setBody("");
+        setAttachment(null);
         onSent?.();
       } else if (res.ok && data?.status === "skipped_not_configured") {
         show(`${tab === "email" ? "Resend" : "WhatsApp"} isn't configured yet — logged but not delivered.`, "info");
@@ -146,17 +179,55 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
             rows={4}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder={tab === "email" ? "<p>Hi there...</p>" : "Hi there..."}
+            placeholder={tab === "email" ? "<p>Hi there...</p>" : attachment ? "Add a caption (optional)..." : "Hi there..."}
           />
+          {tab === "whatsapp" && attachment && (
+            <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-gray-300">
+              {attachment.type.startsWith("image/") ? (
+                <img src={URL.createObjectURL(attachment)} alt="" className="h-10 w-10 rounded object-cover" />
+              ) : (
+                <FileText size={18} className="text-gray-400 flex-shrink-0" />
+              )}
+              <span className="truncate flex-1">{attachment.name}</span>
+              <span className="text-gray-500 flex-shrink-0">{(attachment.size / 1024).toFixed(0)}KB</span>
+              <button onClick={() => setAttachment(null)} className="text-gray-400 hover:text-white flex-shrink-0">
+                <X size={14} />
+              </button>
+            </div>
+          )}
           {tab === "whatsapp" && (
             <p className="text-xs text-gray-500">
-              Note: WhatsApp only delivers free-form text within 24h of the contact messaging in first — otherwise Meta requires a pre-approved template.
+              Note: WhatsApp only delivers free-form content within 24h of the contact messaging in first — otherwise Meta requires a pre-approved template.
             </p>
           )}
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            {tab === "whatsapp" ? (
+              <div className="relative flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setShowEmoji((v) => !v)}
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                  title="Insert emoji"
+                >
+                  <Smile size={18} />
+                </button>
+                {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} />}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                  title="Attach image or document"
+                >
+                  <Paperclip size={18} />
+                </button>
+                <input ref={fileInputRef} type="file" className="hidden" onChange={handlePickFile} accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" />
+              </div>
+            ) : (
+              <span />
+            )}
             <Button
               onClick={handleSend}
-              disabled={sending || !body.trim() || (tab === "email" ? !hasEmail : !hasPhone)}
+              disabled={sending || (!body.trim() && !attachment) || (tab === "email" ? !hasEmail : !hasPhone)}
               size="sm"
             >
               <Send size={14} />
@@ -205,6 +276,7 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
                       )}
                     </div>
                     <p className="text-xs text-gray-500 line-clamp-2">{m.body.replace(/<[^>]+>/g, "")}</p>
+                    {m.media_id != null && <MediaBubble mediaId={m.media_id} mediaType={m.media_type} />}
                     <p className="text-[10px] text-gray-600 mt-1">{new Date(m.created_at).toLocaleString()}</p>
                     {m.error && <p className="text-[10px] text-amber-500 mt-1">{m.error}</p>}
                   </div>

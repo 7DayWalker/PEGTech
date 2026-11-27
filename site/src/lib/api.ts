@@ -65,6 +65,36 @@ export function hasAuthToken(): boolean {
   return memoryToken !== null
 }
 
+/** Builds a URL for a stored media asset (image/audio/document attached to
+ * a WhatsApp message) suitable for direct use in <img>/<audio>/<a> tags,
+ * which can't attach a custom Authorization header — the token is passed
+ * as a query param instead (the backend's auth dependency supports this
+ * exact fallback for that reason). */
+export function mediaUrl(mediaId: number): string {
+  const token = getAuthToken()
+  const qs = token ? `?access_token=${encodeURIComponent(token)}` : ""
+  return `${API_BASE}/api/media/${mediaId}${qs}`
+}
+
+/** Uploads a file as multipart/form-data (e.g. a WhatsApp media attachment).
+ * Deliberately bypasses `request()`'s JSON Content-Type default — the
+ * browser must set its own multipart boundary header for FormData bodies. */
+export async function uploadFile(path: string, file: File, fields?: Record<string, string>): Promise<Response> {
+  const token = getAuthToken()
+  const form = new FormData()
+  form.append("file", file)
+  if (fields) {
+    for (const [k, v] of Object.entries(fields)) form.append(k, v)
+  }
+  const headers: Record<string, string> = token ? { "X-Pegtech-Auth": token, Authorization: `Bearer ${token}` } : {}
+  const res = await fetch(`${API_BASE}${path}`, { method: "POST", body: form, headers, credentials: "include" })
+  if (res.status === 401) {
+    clearAuthToken()
+    window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+  }
+  return res
+}
+
 /** Fired whenever a request comes back 401 — AuthContext listens for this
  * and clears its user state, which in turn drives any gated page to
  * (client-side) navigate away. Deliberately NOT a hard window.location

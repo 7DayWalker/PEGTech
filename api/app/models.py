@@ -4,7 +4,7 @@ SQLAlchemy 2.x ORM models for PEGTech — client-services agency platform.
 from datetime import datetime, date
 from typing import Optional, List
 from sqlalchemy import (
-    String, Integer, Float, Date, DateTime, ForeignKey, Text, UniqueConstraint, Boolean, Numeric
+    String, Integer, Float, Date, DateTime, ForeignKey, Text, UniqueConstraint, Boolean, Numeric, LargeBinary
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db import Base
@@ -489,9 +489,27 @@ class Enquiry(Base):
 # ---------------------------------------------------------------------------
 # Messaging (email / WhatsApp integrations)
 # ---------------------------------------------------------------------------
+class MediaAsset(Base):
+    """Binary storage for media attached to a WhatsApp message (inbound or
+    outbound) — images, voice notes, video, documents. Stored directly in
+    Postgres as a BYTEA column (by explicit choice, instead of an external
+    object store like Supabase Storage). Uploads are capped at
+    MAX_MEDIA_BYTES (see routers/messaging.py and routers/webhooks.py) to
+    keep the database from growing unbounded under heavy media traffic."""
+    __tablename__ = "media_assets"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    mime_type: Mapped[str] = mapped_column(String(100), default="application/octet-stream")
+    filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class MessageLog(Base):
     """Audit trail of every outbound email/WhatsApp message the platform sends,
-    whether triggered manually by staff or automatically on lead stage changes."""
+    whether triggered manually by staff or automatically on lead stage changes,
+    plus every inbound WhatsApp message/reply received via the webhook."""
     __tablename__ = "message_logs"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -504,6 +522,8 @@ class MessageLog(Base):
     trigger: Mapped[str] = mapped_column(String(40), default="manual")  # manual, stage_change, inbound
     status: Mapped[str] = mapped_column(String(30), default="sent")  # sent, delivered, read, received, failed, skipped_not_configured
     direction: Mapped[str] = mapped_column(String(10), default="outbound")  # outbound, inbound
+    media_id: Mapped[Optional[int]] = mapped_column(ForeignKey("media_assets.id", ondelete="SET NULL"), nullable=True)
+    media_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # image, video, audio, document, sticker
     provider_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     sent_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("admin_users.id"), nullable=True)
@@ -512,3 +532,4 @@ class MessageLog(Base):
     lead = relationship("Lead")
     client = relationship("Client")
     sent_by = relationship("AdminUser")
+    media = relationship("MediaAsset")

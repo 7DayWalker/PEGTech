@@ -89,7 +89,7 @@ import importlib
 _routers = []
 for _mod_name in ("public", "admin", "clients", "projects", "leads",
                   "campaigns", "bookings", "audit", "careers", "chat", "enquiries",
-                  "messaging", "webhooks"):
+                  "messaging", "webhooks", "media"):
     try:
         _mod = importlib.import_module(f"app.routers.{_mod_name}")
         _routers.append(_mod.router)

@@ -822,6 +822,8 @@ class MessageLogOut(BaseModel):
     trigger: str
     status: str
     direction: str = "outbound"
+    media_id: Optional[int] = None
+    media_type: Optional[str] = None
     provider_id: Optional[str] = None
     error: Optional[str] = None
     created_at: datetime

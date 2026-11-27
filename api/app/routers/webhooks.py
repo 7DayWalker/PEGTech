@@ -38,8 +38,22 @@ from sqlalchemy.orm import Session
 
 from app import config, models
 from app.db import get_db
+from app.integrations import whatsapp_client as wa_client
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
+
+# Same ceiling as outbound sends (routers/messaging.py) — media is stored
+# directly in Postgres as a BYTEA row, so this keeps the database bounded
+# under heavy inbound media traffic.
+MAX_INBOUND_MEDIA_BYTES = 16 * 1024 * 1024  # 16MB
+
+_MEDIA_FALLBACK_LABELS = {
+    "image": "\U0001F4F7 Photo",
+    "video": "\U0001F3A5 Video",
+    "audio": "\U0001F3A4 Voice note / audio",
+    "document": "\U0001F4C4 Document",
+    "sticker": "Sticker",
+}
 
 
 def _normalize_phone(raw: str | None) -> str:
@@ -128,6 +142,38 @@ def _find_or_create_lead(db: Session, wa_id: str, profile_name: str | None) -> m
     return lead
 
 
+def _store_inbound_media(db: Session, wa_media_id: str, media_type: str) -> tuple[int | None, str]:
+    """Download inbound media from Meta's CDN and store it as a MediaAsset
+    row. Returns (asset_id_or_None, fallback_caption) — any failure along
+    the way (lookup, download, oversize) degrades to a text-only fallback
+    label rather than losing the message entirely."""
+    fallback = _MEDIA_FALLBACK_LABELS.get(media_type, f"[{media_type}]")
+
+    lookup = wa_client.get_whatsapp_media_url(wa_media_id)
+    if lookup.get("status") != "ok":
+        print(f"whatsapp webhook: media lookup failed: {lookup.get('error')}", flush=True)
+        return None, fallback
+
+    download = wa_client.download_whatsapp_media(lookup["url"])
+    if download.get("status") != "ok":
+        print(f"whatsapp webhook: media download failed: {download.get('error')}", flush=True)
+        return None, fallback
+
+    data = download["data"]
+    if len(data) > MAX_INBOUND_MEDIA_BYTES:
+        print(f"whatsapp webhook: inbound media too large ({len(data)} bytes) — storing text fallback only", flush=True)
+        return None, fallback
+
+    asset = models.MediaAsset(
+        mime_type=lookup.get("mime_type") or "application/octet-stream",
+        size_bytes=len(data),
+        data=data,
+    )
+    db.add(asset)
+    db.flush()  # assign asset.id without a full commit yet
+    return asset.id, fallback
+
+
 def _extract_text(msg: dict) -> str:
     msg_type = msg.get("type")
     if msg_type == "text":
@@ -173,14 +219,32 @@ def _handle_inbound_messages(db: Session, value: dict) -> None:
         lead = _find_or_create_lead(db, wa_id, contacts.get(wa_id))
         old_stage = lead.stage
 
+        msg_type = msg.get("type")
+        media_asset_id = None
+        media_type_field = None
+        if msg_type in _MEDIA_FALLBACK_LABELS:
+            media_info = msg.get(msg_type) or {}
+            wa_media_id = media_info.get("id")
+            caption = media_info.get("caption")
+            if wa_media_id:
+                media_asset_id, fallback_text = _store_inbound_media(db, wa_media_id, msg_type)
+                body_text = caption or fallback_text
+                media_type_field = msg_type
+            else:
+                body_text = _extract_text(msg)
+        else:
+            body_text = _extract_text(msg)
+
         db.add(models.MessageLog(
             channel="whatsapp",
             lead_id=lead.id,
             to_address=lead.phone or f"+{wa_id}",
-            body=_extract_text(msg),
+            body=body_text,
             trigger="inbound",
             status="received",
             direction="inbound",
+            media_id=media_asset_id,
+            media_type=media_type_field,
             provider_id=msg_id,
         ))
 
