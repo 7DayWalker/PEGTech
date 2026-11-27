@@ -10,16 +10,22 @@ type ModalProps = {
   onClose: () => void
   title?: string
   children: ReactNode
-  size?: "sm" | "md" | "lg"
+  size?: "sm" | "md" | "lg" | "xl"
+  /** Fixed-height flex-column layout instead of the default auto-growing,
+   * whole-card-scrolls behavior — lets the caller pin something (e.g. a
+   * compose box) at the bottom while an inner panel scrolls independently
+   * (a WhatsApp-style chat). */
+  chatLayout?: boolean
 }
 
 const sizeClasses = {
   sm: "max-w-md",
   md: "max-w-lg",
   lg: "max-w-2xl",
+  xl: "max-w-4xl",
 }
 
-export function Modal({ isOpen, onClose, title, children, size = "md" }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = "md", chatLayout = false }: ModalProps) {
   const handleKey = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -45,11 +51,13 @@ export function Modal({ isOpen, onClose, title, children, size = "md" }: ModalPr
       onClick={onClose}
     >
       <div
-        className={`glass-card rounded-3xl border-white/15 shadow-2xl p-6 w-full ${sizeClasses[size]} max-h-[85vh] overflow-y-auto animate-in zoom-in-95 duration-200`}
+        className={`glass-card rounded-3xl border-white/15 shadow-2xl p-6 w-full ${sizeClasses[size]} animate-in zoom-in-95 duration-200 ${
+          chatLayout ? "h-[82vh] flex flex-col" : "max-h-[85vh] overflow-y-auto"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center gap-2 mb-5">
+          <div className="flex items-center gap-2 mb-5 flex-shrink-0">
             <h2 className="text-lg font-bold text-white">{title}</h2>
             <button
               onClick={onClose}
@@ -60,7 +68,7 @@ export function Modal({ isOpen, onClose, title, children, size = "md" }: ModalPr
             </button>
           </div>
         )}
-        {children}
+        {chatLayout ? <div className="flex-1 min-h-0 flex flex-col">{children}</div> : children}
       </div>
     </div>
   )

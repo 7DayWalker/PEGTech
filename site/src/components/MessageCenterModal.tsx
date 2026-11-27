@@ -1,9 +1,13 @@
 /**
  * Shared compose + history modal for emailing/WhatsApp-ing a lead or client.
  * Backed by /api/admin/{leads|clients}/{id}/email|whatsapp + /messages.
+ *
+ * Laid out like a real chat app: a scrollable history panel on top (oldest
+ * at the top, newest at the bottom, auto-scrolled into view), with the
+ * compose box pinned at the bottom of the modal.
  */
 import { useEffect, useRef, useState } from "react";
-import { Mail, MessageCircle, Send, Clock, AlertTriangle, CheckCircle2, CheckCheck, Inbox, Smile, Paperclip, X, FileText } from "lucide-react";
+import { Mail, MessageCircle, Send, AlertTriangle, CheckCircle2, CheckCheck, Inbox, Smile, Paperclip, X, FileText } from "lucide-react";
 import { Modal } from "./Modal";
 import { Input, Textarea } from "./Input";
 import { Button } from "./Button";
@@ -58,6 +62,8 @@ const statusIcon: Record<MessageLog["status"], React.ElementType | null> = {
   skipped_not_configured: null,
 };
 
+const MAX_ATTACHMENT_BYTES = 16 * 1024 * 1024; // keep in sync with api/app/routers/messaging.py
+
 export function MessageCenterModal({ isOpen, onClose, entityType, entityId, entityName, hasEmail, hasPhone, onSent }: Props) {
   const { show } = useToast();
   const [tab, setTab] = useState<"email" | "whatsapp">(hasEmail ? "email" : "whatsapp");
@@ -69,21 +75,26 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
   const [showEmoji, setShowEmoji] = useState(false);
   const [attachment, setAttachment] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const historyEndRef = useRef<HTMLDivElement>(null);
 
-  const MAX_ATTACHMENT_BYTES = 16 * 1024 * 1024; // keep in sync with api/app/routers/messaging.py
-
-  function loadHistory() {
+  function loadHistory(scrollAfter = true) {
     setLoadingHistory(true);
     api
       .get(`/api/admin/${entityType}/${entityId}/messages`)
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => setHistory(data))
+      .then((data) => {
+        setHistory(data);
+        if (scrollAfter) {
+          // Wait a tick for the new rows to actually render before scrolling.
+          setTimeout(() => historyEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+        }
+      })
       .finally(() => setLoadingHistory(false));
   }
 
   useEffect(() => {
     if (isOpen) {
-      loadHistory();
+      loadHistory(false);
       setSubject("");
       setBody("");
       setAttachment(null);
@@ -92,6 +103,14 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, entityId]);
+
+  // Jump to the latest message once history first loads for this conversation.
+  useEffect(() => {
+    if (!loadingHistory && history.length > 0) {
+      historyEndRef.current?.scrollIntoView({ behavior: "auto" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingHistory]);
 
   function handlePickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -131,7 +150,7 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
       } else if (res.ok && data?.status === "skipped_not_configured") {
         show(`${tab === "email" ? "Resend" : "WhatsApp"} isn't configured yet — logged but not delivered.`, "info");
       } else if (res.ok) {
-        show(data?.error || "Send failed — see history below.", "error");
+        show(data?.error || "Send failed — see history above.", "error");
       } else {
         show(data?.detail || "Couldn't send message.", "error");
       }
@@ -144,9 +163,10 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Message ${entityName}`} size="lg">
-      <div className="space-y-5">
-        <div className="flex gap-2">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Message ${entityName}`} size="xl" chatLayout>
+      <div className="flex flex-col h-full min-h-0">
+        {/* Tabs — fixed at top */}
+        <div className="flex gap-2 flex-shrink-0 mb-3">
           <button
             onClick={() => setTab("email")}
             disabled={!hasEmail}
@@ -167,20 +187,72 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
           </button>
         </div>
 
-        {!hasEmail && tab === "email" && <p className="text-xs text-amber-400">No email address on file.</p>}
-        {!hasPhone && tab === "whatsapp" && <p className="text-xs text-amber-400">No phone number on file.</p>}
+        {!hasEmail && tab === "email" && <p className="text-xs text-amber-400 flex-shrink-0 mb-2">No email address on file.</p>}
+        {!hasPhone && tab === "whatsapp" && <p className="text-xs text-amber-400 flex-shrink-0 mb-2">No phone number on file.</p>}
 
-        <div className="space-y-3">
+        {/* History — scrollable, oldest at top, newest at bottom, like a real chat */}
+        <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-4 mb-3">
+          {loadingHistory ? (
+            <p className="text-sm text-gray-500">Loading…</p>
+          ) : history.length === 0 ? (
+            <div className="h-full flex items-center justify-center">
+              <p className="text-sm text-gray-500">No messages yet — say hello below 👋</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {[...history].reverse().map((m) => {
+                const inbound = m.direction === "inbound";
+                const StatusIcon = statusIcon[m.status];
+                return (
+                  <div key={m.id} className={`flex ${inbound ? "justify-start" : "justify-end"}`}>
+                    <div
+                      className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 ${
+                        inbound
+                          ? "bg-white/[0.06] border border-gemini-blue/20 rounded-bl-sm"
+                          : "bg-gemini-gradient/20 border border-white/10 rounded-br-sm"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        {inbound ? (
+                          <Inbox size={11} className="text-gemini-blue" />
+                        ) : m.channel === "email" ? (
+                          <Mail size={11} className="text-gray-400" />
+                        ) : (
+                          <MessageCircle size={11} className="text-gray-400" />
+                        )}
+                        <span className="text-[10px] text-gray-400">
+                          {inbound ? "Received" : m.channel === "email" ? m.subject || "(no subject)" : "WhatsApp"}
+                        </span>
+                        {m.trigger === "stage_change" && (
+                          <Badge variant="default" className="text-[9px] px-1.5 py-0">Auto</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-200 whitespace-pre-wrap break-words">{m.body.replace(/<[^>]+>/g, "")}</p>
+                      {m.media_id != null && <MediaBubble mediaId={m.media_id} mediaType={m.media_type} />}
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className="text-[10px] text-gray-500">{new Date(m.created_at).toLocaleString()}</span>
+                        {!inbound && (
+                          <Badge variant={statusBadge[m.status].variant} className="text-[9px] px-1.5 py-0 ml-auto">
+                            {StatusIcon && <StatusIcon size={9} className="mr-0.5" />}
+                            {statusBadge[m.status].label}
+                          </Badge>
+                        )}
+                      </div>
+                      {m.error && <p className="text-[10px] text-amber-500 mt-1">{m.error}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={historyEndRef} />
+            </div>
+          )}
+        </div>
+
+        {/* Compose box — pinned at the bottom */}
+        <div className="flex-shrink-0 space-y-2">
           {tab === "email" && (
             <Input label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject line" />
           )}
-          <Textarea
-            label={tab === "email" ? "Message (HTML allowed)" : "Message"}
-            rows={4}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={tab === "email" ? "<p>Hi there...</p>" : attachment ? "Add a caption (optional)..." : "Hi there..."}
-          />
           {tab === "whatsapp" && attachment && (
             <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-gray-300">
               {attachment.type.startsWith("image/") ? (
@@ -195,14 +267,9 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
               </button>
             </div>
           )}
-          {tab === "whatsapp" && (
-            <p className="text-xs text-gray-500">
-              Note: WhatsApp only delivers free-form content within 24h of the contact messaging in first — otherwise Meta requires a pre-approved template.
-            </p>
-          )}
-          <div className="flex items-center justify-between">
-            {tab === "whatsapp" ? (
-              <div className="relative flex items-center gap-1">
+          <div className="flex items-end gap-2">
+            {tab === "whatsapp" && (
+              <div className="relative flex items-center gap-0.5 flex-shrink-0 pb-1">
                 <button
                   type="button"
                   onClick={() => setShowEmoji((v) => !v)}
@@ -222,67 +289,29 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
                 </button>
                 <input ref={fileInputRef} type="file" className="hidden" onChange={handlePickFile} accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" />
               </div>
-            ) : (
-              <span />
             )}
+            <div className="flex-1">
+              <Textarea
+                rows={2}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder={tab === "email" ? "<p>Hi there...</p>" : attachment ? "Add a caption (optional)..." : "Type a message..."}
+              />
+            </div>
             <Button
               onClick={handleSend}
               disabled={sending || (!body.trim() && !attachment) || (tab === "email" ? !hasEmail : !hasPhone)}
               size="sm"
+              className="flex-shrink-0 mb-0.5"
             >
               <Send size={14} />
               {sending ? "Sending…" : "Send"}
             </Button>
           </div>
-        </div>
-
-        <div className="border-t border-white/10 pt-4">
-          <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
-            <Clock size={14} /> History
-          </h3>
-          {loadingHistory ? (
-            <p className="text-sm text-gray-500">Loading…</p>
-          ) : history.length === 0 ? (
-            <p className="text-sm text-gray-500">No messages sent yet.</p>
-          ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-              {history.map((m) => {
-                const inbound = m.direction === "inbound";
-                const StatusIcon = statusIcon[m.status];
-                return (
-                  <div
-                    key={m.id}
-                    className={`rounded-xl border p-3 ${
-                      inbound ? "border-gemini-blue/20 bg-gemini-blue/[0.06] ml-0 mr-6" : "border-white/10 bg-white/[0.02] ml-6 mr-0"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      {inbound ? (
-                        <Inbox size={12} className="text-gemini-blue" />
-                      ) : m.channel === "email" ? (
-                        <Mail size={12} className="text-gray-400" />
-                      ) : (
-                        <MessageCircle size={12} className="text-gray-400" />
-                      )}
-                      <span className="text-xs text-gray-400">
-                        {inbound ? "Received" : m.channel === "email" ? m.subject || "(no subject)" : "WhatsApp"}
-                      </span>
-                      <Badge variant={statusBadge[m.status].variant} className="ml-auto text-[10px] px-2 py-0.5">
-                        {StatusIcon && <StatusIcon size={10} className="mr-1" />}
-                        {statusBadge[m.status].label}
-                      </Badge>
-                      {m.trigger === "stage_change" && (
-                        <Badge variant="default" className="text-[10px] px-2 py-0.5">Auto</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 line-clamp-2">{m.body.replace(/<[^>]+>/g, "")}</p>
-                    {m.media_id != null && <MediaBubble mediaId={m.media_id} mediaType={m.media_type} />}
-                    <p className="text-[10px] text-gray-600 mt-1">{new Date(m.created_at).toLocaleString()}</p>
-                    {m.error && <p className="text-[10px] text-amber-500 mt-1">{m.error}</p>}
-                  </div>
-                );
-              })}
-            </div>
+          {tab === "whatsapp" && (
+            <p className="text-[11px] text-gray-500">
+              WhatsApp only delivers free-form content within 24h of the contact messaging in first — otherwise Meta requires a pre-approved template.
+            </p>
           )}
         </div>
       </div>
