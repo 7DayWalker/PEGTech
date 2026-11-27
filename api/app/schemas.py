@@ -826,6 +826,7 @@ class MessageLogOut(BaseModel):
     direction: str = "outbound"
     media_id: Optional[int] = None
     media_type: Optional[str] = None
+    reaction_emoji: Optional[str] = None
     provider_id: Optional[str] = None
     error: Optional[str] = None
     created_at: datetime

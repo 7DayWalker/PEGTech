@@ -28,6 +28,7 @@ type MessageLog = {
   direction?: "outbound" | "inbound";
   media_id?: number | null;
   media_type?: string | null;
+  reaction_emoji?: string | null;
   error?: string | null;
   created_at: string;
 };
@@ -230,14 +231,25 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
                 const inbound = m.direction === "inbound";
                 const StatusIcon = statusIcon[m.status];
                 return (
-                  <div key={m.id} className={`flex ${inbound ? "justify-start" : "justify-end"}`}>
+                  <div
+                    key={m.id}
+                    className={`flex ${inbound ? "justify-start" : "justify-end"} ${m.reaction_emoji ? "mb-2" : ""}`}
+                  >
                     <div
-                      className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 ${
+                      className={`relative max-w-[75%] rounded-2xl px-3.5 py-2.5 ${
                         inbound
                           ? "bg-white/[0.06] border border-gemini-blue/20 rounded-bl-sm"
                           : "bg-gemini-gradient/20 border border-white/10 rounded-br-sm"
                       }`}
                     >
+                      {m.reaction_emoji && (
+                        <span
+                          className={`absolute -bottom-2.5 ${inbound ? "left-2" : "right-2"} flex items-center justify-center w-6 h-6 rounded-full bg-[#15151c] border border-white/15 text-sm leading-none shadow-md`}
+                          title="Reaction"
+                        >
+                          {m.reaction_emoji}
+                        </span>
+                      )}
                       <div className="flex items-center gap-1.5 mb-1">
                         {inbound ? (
                           <Inbox size={11} className="text-gemini-blue" />

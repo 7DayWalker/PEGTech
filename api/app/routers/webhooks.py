@@ -214,6 +214,40 @@ def _extract_text(msg: dict) -> str:
     return f"[Unsupported message type: {msg_type}]"
 
 
+def _handle_reaction(db: Session, wa_id: str, profile_name: str | None, msg: dict) -> None:
+    """A tap-react (👍, ❤️, etc.) on an existing message. Attaches the emoji
+    directly onto that message's MessageLog row — WhatsApp-style — instead
+    of logging the reaction as its own separate chat bubble. An empty/
+    missing emoji means the contact removed their reaction. Idempotent, so
+    Meta's at-least-once webhook retries are harmless to re-apply."""
+    reaction = msg.get("reaction") or {}
+    target_provider_id = reaction.get("message_id")
+    emoji = reaction.get("emoji") or None
+    if not target_provider_id:
+        return
+
+    lead = _find_or_create_lead(db, wa_id, profile_name)
+    target = (
+        db.query(models.MessageLog)
+        .filter_by(provider_id=target_provider_id, lead_id=lead.id)
+        .first()
+    )
+    if target is not None:
+        target.reaction_emoji = emoji
+        db.commit()
+        return
+
+    # Couldn't match the original message (it predates this feature, or was
+    # never logged for some other reason) — fall back to a standalone line
+    # so the reaction isn't silently dropped.
+    db.add(models.MessageLog(
+        channel="whatsapp", lead_id=lead.id, to_address=lead.phone or f"+{wa_id}",
+        body=f"{emoji} (reacted to a message)" if emoji else "Reacted to a message",
+        trigger="inbound", status="received", direction="inbound",
+    ))
+    db.commit()
+
+
 def _handle_inbound_messages(db: Session, value: dict) -> None:
     messages = value.get("messages") or []
     if not messages:
@@ -224,6 +258,10 @@ def _handle_inbound_messages(db: Session, value: dict) -> None:
         wa_id = msg.get("from")
         msg_id = msg.get("id")
         if not wa_id or not msg_id:
+            continue
+
+        if msg.get("type") == "reaction":
+            _handle_reaction(db, wa_id, contacts.get(wa_id), msg)
             continue
 
         # De-dupe Meta's at-least-once webhook retries.

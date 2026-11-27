@@ -532,6 +532,11 @@ class MessageLog(Base):
     direction: Mapped[str] = mapped_column(String(10), default="outbound")  # outbound, inbound
     media_id: Mapped[Optional[int]] = mapped_column(ForeignKey("media_assets.id", ondelete="SET NULL"), nullable=True)
     media_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # image, video, audio, document, sticker
+    # The current tap-react emoji (👍, ❤️, etc.) a contact has placed on THIS
+    # message, WhatsApp-style — null means no reaction (or it was removed).
+    # Only ever set on inbound WhatsApp reaction events targeting a message
+    # we have logged (see routers/webhooks.py::_handle_reaction).
+    reaction_emoji: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     provider_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     sent_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("admin_users.id"), nullable=True)
