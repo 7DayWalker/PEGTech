@@ -55,6 +55,19 @@ _MEDIA_FALLBACK_LABELS = {
     "sticker": "Sticker",
 }
 
+# WhatsApp delivers a handful of events it can't pass the actual content
+# for — most commonly a deleted/revoked message or an edited one — as a
+# message with type "unsupported" and an `unsupported.type` subfield
+# naming what actually happened. See Meta error 131051.
+_UNSUPPORTED_SUBTYPE_LABELS = {
+    "delete": "\U0001F5D1\uFE0F This message was deleted",
+    "edit": "\u270F\uFE0F Edited a message (edit not supported here — original text shown above)",
+    "pin": "\U0001F4CC Pinned a message",
+    "unpin": "Unpinned a message",
+    "poll_creation": "\U0001F4CA Sent a poll (polls aren't supported here — ask them to reply with text)",
+    "poll_update": "\U0001F4CA Updated a poll",
+}
+
 
 def _normalize_phone(raw: str | None) -> str:
     if not raw:
@@ -211,6 +224,18 @@ def _extract_text(msg: dict) -> str:
         return f"[Placed an order — {len(items)} item(s)]" if items else "[Placed an order]"
     if msg_type == "system":
         return (msg.get("system") or {}).get("body") or "[System notification]"
+    if msg_type == "unsupported":
+        # Meta's catch-all for content it can't relay to us (deleted/edited
+        # messages, polls, etc). The real kind lives in `unsupported.type`,
+        # not the top-level `errors` array.
+        subtype = (msg.get("unsupported") or {}).get("type")
+        if subtype in _UNSUPPORTED_SUBTYPE_LABELS:
+            return _UNSUPPORTED_SUBTYPE_LABELS[subtype]
+        errors = msg.get("errors") or []
+        details = (errors[0].get("error_data") or {}).get("details") if errors else None
+        if subtype:
+            return f"[{subtype.replace('_', ' ').title()} — not supported by WhatsApp's API]"
+        return f"[{details or 'Message type not supported by WhatsApp'}]"
     return f"[Unsupported message type: {msg_type}]"
 
 
