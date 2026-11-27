@@ -16,16 +16,24 @@ from sqlalchemy.orm import Session
 
 from app import ai_client, models
 
-_STALE_HOURS = 48
+_STALE_HOURS = 24
 _MAX_ITEMS_PER_CATEGORY = 8
 
 # Deterministic substrings our own lead_import.py writes into a lead's
 # notes when its research flagged something worth a human double-check —
 # matched here, not re-derived, so this stays in lockstep with whatever
 # exact wording lead_import.py uses.
+# Keyed on what lead_import.py actually writes into a lead's notes (the
+# raw marker value after "Website check: ", via its _build_notes()) — NOT
+# the human-readable warning sentence, which only ever appears in the
+# one-time import API response and is never persisted to the database.
+# Confirmed by direct inspection: a real imported lead's notes contained
+# "Website check: website_found", not the word "existing" anywhere, so
+# matching on the readable phrase here always missed every flagged lead
+# with zero errors or indication anything was wrong.
 _IMPORT_FLAG_MARKERS = {
-    "website_found": "an existing website",
-    "out_of_business": "possibly out of business",
+    "Website check: website_found": "an existing website",
+    "Website check: out_of_business": "possibly out of business",
 }
 
 # Tiny in-process cache so repeated dashboard loads within a few minutes
@@ -93,7 +101,7 @@ def build_briefing(db: Session, with_ai_summary: bool = True) -> dict:
             break
         notes = lead.notes or ""
         for marker, label in _IMPORT_FLAG_MARKERS.items():
-            if label in notes:
+            if marker in notes:
                 items.append({
                     "type": "import_flag",
                     "severity": "medium",
@@ -187,7 +195,15 @@ def _get_ai_summary(counts: dict, items: list[dict]) -> tuple[Optional[str], Opt
     (summary_or_None, provider_or_None) — None means no AI provider
     answered, and the caller just shows the rule-based items with no
     summary line, not an error."""
-    cache_key = str(sorted(counts.items())) + str(len(items))
+    # Keyed on the actual set of item identities (not just counts) — two
+    # different situations that happen to have the same counts per
+    # category (e.g. "1 stale hot lead" today vs. a completely different
+    # lead tomorrow) must NOT share a cached summary describing the wrong
+    # business.
+    identity = tuple(sorted(
+        (i.get("lead_id"), i.get("client_id"), i.get("escalation_id"), i["type"]) for i in items
+    ))
+    cache_key = str(identity)
     cached = _AI_SUMMARY_CACHE.get(cache_key)
     now = time.monotonic()
     if cached and (now - cached[0]) < _AI_SUMMARY_TTL_SECONDS:
@@ -204,4 +220,12 @@ def _get_ai_summary(counts: dict, items: list[dict]) -> tuple[Optional[str], Opt
     summary = result.text.strip() if result else None
     provider = result.provider if result else None
     _AI_SUMMARY_CACHE[cache_key] = (now, summary, provider)
+
+    # Opportunistic cleanup so this dict doesn't grow unbounded over a
+    # long-running server's lifetime — every distinct day's lead/client ID
+    # combination would otherwise add a new entry that's never removed.
+    expired = [k for k, v in _AI_SUMMARY_CACHE.items() if (now - v[0]) >= _AI_SUMMARY_TTL_SECONDS]
+    for k in expired:
+        _AI_SUMMARY_CACHE.pop(k, None)
+
     return summary, provider

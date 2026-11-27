@@ -37,7 +37,7 @@ COLUMN_SYNONYMS: dict[str, set[str]] = {
     "website": {"website", "site", "url", "web", "weblink", "homepage"},
     "address": {"address", "streetaddress", "fulladdress", "location", "addr"},
     "city": {"city", "town"},
-    "state": {"state", "province"},
+    "state": {"state", "province", "region"},
     "country": {"country"},
     "service": {"service", "industry", "category", "niche", "businesstype", "sector", "type", "googlecategory"},
     "source": {"source", "leadsource", "researchsource"},

@@ -130,16 +130,25 @@ def _find_duplicate_lead(existing: list[models.Lead], fields: dict) -> models.Le
     so re-uploading an updated/enriched research sheet (e.g. a follow-up
     email-finding pass on the same business list) fills in the gaps on
     existing leads instead of creating duplicates. Checked in order of
-    reliability: phone number, then email, then an exact business name
-    match on its own.
+    reliability: phone number, then email, then business name (gated by
+    city/state, see below).
 
-    Deliberately NOT gated on city/address matching too: different research
-    passes over the same business routinely carry different (or no) city
-    data — e.g. one sheet has a "Tulsa metro" area label, a later one has
-    the exact street address's city ("Owasso") — so requiring both to agree
-    would silently re-create the same business as a second lead instead of
-    enriching the first one, which defeats the entire point of safe
-    re-uploads."""
+    The business-name tier intentionally does NOT gate on city — tested
+    against real research data, a single real business ("One Way Roofing
+    & Construction LLC") came back scoped as "Tulsa" from one Google-Maps
+    search pass but with a precise street address in "Owasso" (a Tulsa
+    suburb) from a later pass — same business, disagreeing city strings.
+    Requiring city agreement would have wrongly treated that as two
+    businesses and blocked the merge, defeating the point of re-uploads.
+
+    It DOES gate on state when both sides have one and they disagree —
+    state is a far more reliable signal than city (metro/suburb naming
+    varies constantly; state essentially never does for the same real
+    business), and this gate is justified by a real finding in the same
+    research data: one note for a "Clevenger Roofing" lead explicitly
+    flags "Ohio BBB result is a different Clevenger Roofing; do not use"
+    — i.e. two unrelated businesses sharing an identical name is a
+    real, observed risk this guards against."""
     phone = fields.get("phone")
     if phone:
         for lead in existing:
@@ -156,9 +165,14 @@ def _find_duplicate_lead(existing: list[models.Lead], fields: dict) -> models.Le
     business_name = fields.get("business_name")
     if business_name:
         bn_l = business_name.strip().lower()
+        state_l = (fields.get("state") or "").strip().lower()
         for lead in existing:
-            if (lead.business_name or "").strip().lower() == bn_l:
-                return lead
+            if (lead.business_name or "").strip().lower() != bn_l:
+                continue
+            existing_state = (lead.state or "").strip().lower()
+            if state_l and existing_state and state_l != existing_state:
+                continue  # same name, different state — different business, don't merge
+            return lead
 
     return None
 
