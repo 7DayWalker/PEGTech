@@ -390,6 +390,13 @@ class Escalation(Base):
     # existing client's frustration doesn't.
     lead_id: Mapped[Optional[int]] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), nullable=True, index=True)
     session_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    # Best contact info the visitor volunteered during the conversation
+    # that triggered this escalation (parsed from the transcript at
+    # creation time) — without this, an anonymous CSR-widget escalation
+    # has no way for a human to actually follow up, no matter how fast
+    # staff are notified.
+    contact_email: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    contact_phone: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
     source: Mapped[str] = mapped_column(String(40), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     transcript: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

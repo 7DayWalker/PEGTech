@@ -80,6 +80,17 @@ _SYSTEM_PROMPT = (
     "describes an unresolved problem with existing work, explicitly asks "
     "for a human, or raises anything legal/contractual/a complaint. "
     "Otherwise escalate=false.\n"
+    "- Whenever you set escalate=true AND the conversation so far hasn't "
+    "already given you an email or phone number, your reply MUST ask for "
+    "the best email or phone number to reach them at, in the same "
+    "sentence as acknowledging you're flagging this for the team "
+    '(e.g. "I\'m flagging this for our team right now — what\'s the best '
+    'email or number for them to reach you on?"). A teammate follows up '
+    "directly by phone/email/WhatsApp, they do not join this chat window "
+    "— never say or imply a human is about to appear inside this same "
+    "conversation. If an email or phone number is already visible earlier "
+    "in the conversation, skip asking again and just confirm you're "
+    "flagging it.\n"
     "- Classify intent as exactly one of: pricing_inquiry, "
     "booking_request, support_request, career_inquiry, general_inquiry.\n\n"
     "Respond with ONLY a JSON object, no markdown fences, no commentary: "

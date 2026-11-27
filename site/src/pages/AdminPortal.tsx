@@ -12,7 +12,16 @@ import { GlowBackground } from "../components/GlowBackground";
 import { Modal } from "../components/Modal";
 import { Textarea } from "../components/Input";
 import { Button } from "../components/Button";
-import { Users, Folder, Mail, BarChart3, AlertTriangle, RefreshCw, Sparkles, Flame, Eye, MessageCircle, Siren, TrendingUp, ExternalLink } from "lucide-react";
+import { Users, Folder, Mail, BarChart3, AlertTriangle, RefreshCw, Sparkles, Flame, Eye, MessageCircle, Siren, TrendingUp, ExternalLink, Bot, Send } from "lucide-react";
+
+const DASHBOARD_QUERY_EXAMPLES = [
+  "How many hot leads are uncontacted right now?",
+  "What bookings do we have this week?",
+  "Summarize what's flagged in escalations.",
+  "Which clients are at risk (red/amber health)?",
+];
+
+type DashboardQATurn = { question: string; answer: string; provider: string | null };
 
 const BRIEFING_ICONS: Record<string, any> = {
   stale_hot_lead: Flame,
@@ -51,6 +60,9 @@ export function AdminPortal() {
   const [resolvingId, setResolvingId] = useState<number | null>(null);
   const [viewingEscalation, setViewingEscalation] = useState<any | null>(null);
   const [resolveNote, setResolveNote] = useState("");
+  const [dashQuestion, setDashQuestion] = useState("");
+  const [dashHistory, setDashHistory] = useState<DashboardQATurn[]>([]);
+  const [dashLoading, setDashLoading] = useState(false);
   const { show } = useToast();
 
   // Auth gating lives here, driven by the shared session state — NOT by
@@ -129,6 +141,30 @@ export function AdminPortal() {
       }
     } finally {
       setResolvingId(null);
+    }
+  }
+
+  async function askDashboard(text?: string) {
+    const question = (text ?? dashQuestion).trim();
+    if (!question || dashLoading) return;
+    setDashQuestion("");
+    setDashLoading(true);
+    try {
+      const res = await api.post("/api/admin/dashboard/query", { question });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 429) {
+        show(data.detail || "Too many questions in a row — wait a moment.", "error");
+        return;
+      }
+      if (!res.ok) {
+        show(data.detail || "Couldn't get an answer. Please try again.", "error");
+        return;
+      }
+      setDashHistory((prev) => [...prev, { question, answer: data.answer, provider: data.provider }]);
+    } catch {
+      show("Couldn't reach the dashboard assistant. Please try again.", "error");
+    } finally {
+      setDashLoading(false);
     }
   }
 
@@ -253,6 +289,82 @@ export function AdminPortal() {
               </Card>
             ))}
           </div>
+
+          {/* "Ask your dashboard" — natural-language query over real business data */}
+          <Card padding="lg" className="mb-8">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-lg bg-gemini-gradient flex items-center justify-center shrink-0">
+                <Bot size={16} className="text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Ask your dashboard</h3>
+            </div>
+            <p className="text-xs text-gray-500 mb-4 ml-10">
+              Answers are grounded only in your real leads, clients, escalations, and bookings data — it'll say so if something isn't in there, rather than guess.
+            </p>
+
+            {dashHistory.length > 0 && (
+              <div className="space-y-3 mb-4 max-h-80 overflow-y-auto pr-1">
+                {dashHistory.map((turn, i) => (
+                  <div key={i} className="space-y-1.5">
+                    <p className="text-sm text-gray-200 font-medium ml-10">{turn.question}</p>
+                    <div className="flex items-start gap-2 ml-10">
+                      <div className="w-5 h-5 rounded-md bg-dark-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <Sparkles size={10} className="text-gemini-purple" />
+                      </div>
+                      <p className="text-sm text-gray-300 bg-white/[0.03] border border-white/10 rounded-xl rounded-tl-sm px-3 py-2 flex-1">
+                        {turn.answer}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {dashLoading && (
+              <div className="flex items-center gap-1.5 ml-10 mb-4">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce"
+                    style={{ animationDelay: `${i * 0.15}s` }}
+                  />
+                ))}
+              </div>
+            )}
+
+            {dashHistory.length === 0 && !dashLoading && (
+              <div className="flex flex-wrap gap-2 mb-4 ml-10">
+                {DASHBOARD_QUERY_EXAMPLES.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => askDashboard(q)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.03] text-gray-400 hover:bg-white/[0.08] hover:text-gray-200 transition-colors"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2 ml-10">
+              <input
+                value={dashQuestion}
+                onChange={(e) => setDashQuestion(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && askDashboard()}
+                placeholder="Ask about your leads, clients, escalations, bookings…"
+                disabled={dashLoading}
+                className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-gemini-purple/50 focus:border-transparent disabled:opacity-60"
+              />
+              <button
+                onClick={() => askDashboard()}
+                disabled={dashLoading || !dashQuestion.trim()}
+                className="flex items-center justify-center w-10 h-10 shrink-0 rounded-xl bg-gemini-gradient text-white disabled:opacity-40 hover:opacity-90 active:scale-95 transition-all"
+                aria-label="Ask"
+              >
+                <Send size={16} />
+              </button>
+            </div>
+          </Card>
 
           {/* Daily Briefing — "what needs attention today" */}
           {!briefingLoading && briefing && briefing.items?.length > 0 && (
@@ -433,6 +545,13 @@ export function AdminPortal() {
                           {esc.source} {esc.sentiment ? `· ${esc.sentiment}` : ""}
                         </p>
                         <p className="text-sm text-gray-200">{esc.ai_summary || esc.summary}</p>
+                        {(esc.contact_email || esc.contact_phone) ? (
+                          <p className="text-xs text-green-400 mt-1">
+                            📞 {[esc.contact_email, esc.contact_phone].filter(Boolean).join(" · ")}
+                          </p>
+                        ) : esc.source === "csr_widget" && (
+                          <p className="text-xs text-orange-400/80 mt-1">No contact info shared yet</p>
+                        )}
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); resolveEscalation(esc.id); }}
@@ -487,6 +606,28 @@ export function AdminPortal() {
                 <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Reason</p>
                 <p className="text-sm text-gray-200">{viewingEscalation.reason}</p>
               </div>
+
+              {/* A CSR-widget escalation has no Lead/Client record to call —
+                  this contact info (parsed from the chat transcript itself)
+                  is the only way a human can actually follow up directly,
+                  which is the whole mechanism behind the widget's "a
+                  teammate follows up within 2 minutes" promise. */}
+              {(viewingEscalation.contact_email || viewingEscalation.contact_phone) ? (
+                <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-3">
+                  <p className="text-xs uppercase tracking-wide text-green-400 mb-1">Visitor contact — follow up directly</p>
+                  <p className="text-sm text-gray-200">
+                    {[viewingEscalation.contact_email, viewingEscalation.contact_phone].filter(Boolean).join("  ·  ")}
+                  </p>
+                </div>
+              ) : (
+                viewingEscalation.source === "csr_widget" && (
+                  <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3">
+                    <p className="text-xs uppercase tracking-wide text-orange-400">
+                      No contact info shared yet — only reachable if they're still in the chat window.
+                    </p>
+                  </div>
+                )
+              )}
 
               <div>
                 <p className="text-xs uppercase tracking-wide text-gray-500 mb-1 flex items-center gap-1">

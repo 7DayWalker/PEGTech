@@ -76,6 +76,13 @@ AI_FALLBACK_CHAIN = os.getenv(
 CSR_RATE_LIMIT_MAX = int(os.getenv("CSR_RATE_LIMIT_MAX", "20"))
 CSR_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("CSR_RATE_LIMIT_WINDOW_SECONDS", "300"))
 
+# "Ask your dashboard" (/api/admin/dashboard/query) is staff-only, but
+# still a per-question AI call over a context block that gets rebuilt
+# every time — rate-limited per staff user so an accidental tight loop
+# (or someone holding Enter) can't run up the AI bill either.
+DASHBOARD_QUERY_RATE_LIMIT_MAX = int(os.getenv("DASHBOARD_QUERY_RATE_LIMIT_MAX", "20"))
+DASHBOARD_QUERY_RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("DASHBOARD_QUERY_RATE_LIMIT_WINDOW_SECONDS", "300"))
+
 # Captcha (Cloudflare Turnstile)
 TURNSTILE_SECRET = os.getenv("TURNSTILE_SECRET", "")
 

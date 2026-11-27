@@ -577,6 +577,8 @@ class EscalationOut(EscalationBase):
     client_id: Optional[int] = None
     lead_id: Optional[int] = None
     session_id: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
     ai_summary: Optional[str] = None
     ai_summary_provider: Optional[str] = None
     assignee_id: Optional[int] = None

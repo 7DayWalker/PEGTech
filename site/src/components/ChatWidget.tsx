@@ -346,7 +346,7 @@ export function ChatWidget() {
       }
       if (data.escalate) {
         show(
-          "This has been flagged for our team — a human usually jumps in within about 2 minutes.",
+          "This has been flagged for our team — a teammate usually reaches out directly (by phone, email, or WhatsApp) within about 2 minutes.",
           "info"
         );
       }
@@ -398,7 +398,7 @@ export function ChatWidget() {
                 AI Assistant
               </h3>
               <p className="text-xs text-white/80 mt-0.5">
-                Instant replies • Our team usually joins within 2 min
+                Instant AI replies • A teammate follows up fast if needed
               </p>
             </div>
             <button
@@ -415,8 +415,8 @@ export function ChatWidget() {
               <div className="space-y-4">
                 <div className="mr-auto max-w-[90%] bg-dark-700/80 text-gray-200 rounded-2xl rounded-bl-sm px-4 py-3 text-sm">
                   👋 Hi, I'm PEGTech's AI assistant. Ask me about our services, pricing,
-                  or anything else — I'm here 24/7, and a human teammate typically
-                  joins within 2 minutes if you need one.
+                  or anything else — I'm here 24/7, and if you need a human, a
+                  teammate typically follows up directly within about 2 minutes.
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-500 mb-2 flex items-center gap-1">

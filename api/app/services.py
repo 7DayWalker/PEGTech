@@ -301,8 +301,20 @@ def csr_response(message: str, history: List[dict]) -> dict:
         intent = "general_inquiry"
         response = greeting
 
+    escalate = intent in ("support_request",) and any(w in lower for w in ("angry", "frustrated", "upset"))
+    if escalate:
+        # Matches the AI path's rule (csr_ai.py): a teammate follows up
+        # directly by phone/email/WhatsApp rather than joining this chat
+        # window, so the visitor needs to actually be asked for a way to
+        # reach them — otherwise staff get alerted with nothing to act on.
+        response = (
+            "I'm sorry — I'm flagging this for our team right now so a "
+            "human can follow up directly. What's the best email or "
+            "phone number to reach you on?"
+        )
+
     return {
         "intent": intent,
         "response": response,
-        "escalate": intent in ("support_request",) and any(w in lower for w in ("angry", "frustrated", "upset")),
+        "escalate": escalate,
     }

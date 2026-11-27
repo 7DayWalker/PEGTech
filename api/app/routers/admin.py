@@ -15,8 +15,11 @@ from app import lead_import
 from app import lead_scoring
 from app import outreach_drafting
 from app import escalation_summary
+from app import dashboard_query
 from app.phone_utils import phones_match
 from app.briefing import build_briefing
+from app.rate_limit import check_rate_limit
+from app.config import DASHBOARD_QUERY_RATE_LIMIT_MAX, DASHBOARD_QUERY_RATE_LIMIT_WINDOW_SECONDS
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 logger = logging.getLogger("pegtech.admin")
@@ -53,6 +56,30 @@ def admin_stats(request: Request, db: Session = Depends(get_db), _=Depends(requi
 @router.get("/briefing")
 def admin_briefing(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return build_briefing(db)
+
+
+# ── "Ask your dashboard" — natural-language query over real business data ──
+@router.post("/dashboard/query")
+def ask_dashboard(payload: dict, request: Request, db: Session = Depends(get_db),
+                   user=Depends(require_staff())):
+    question = str(payload.get("question", "")).strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Ask a question first.")
+    if len(question) > 500:
+        raise HTTPException(status_code=400, detail="Keep the question under 500 characters.")
+
+    allowed, retry_after = check_rate_limit(
+        f"dash_query:{user.id}", DASHBOARD_QUERY_RATE_LIMIT_MAX, DASHBOARD_QUERY_RATE_LIMIT_WINDOW_SECONDS
+    )
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many questions in a row — wait a moment and try again.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    result = dashboard_query.answer_dashboard_question(db, question)
+    return result
 
 
 # ── Staff directory (for assignment dropdowns) ──
