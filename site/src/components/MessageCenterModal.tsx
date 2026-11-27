@@ -7,7 +7,7 @@
  * compose box pinned at the bottom of the modal.
  */
 import { useEffect, useRef, useState } from "react";
-import { Mail, MessageCircle, Send, AlertTriangle, CheckCircle2, CheckCheck, Inbox, Smile, Paperclip, X, FileText } from "lucide-react";
+import { Mail, MessageCircle, Send, AlertTriangle, CheckCircle2, CheckCheck, Inbox, Smile, Paperclip, X, FileText, Sparkles } from "lucide-react";
 import { Modal } from "./Modal";
 import { Input, Textarea } from "./Input";
 import { Button } from "./Button";
@@ -76,6 +76,7 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [drafting, setDrafting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
@@ -148,6 +149,25 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
   function insertEmoji(emoji: string) {
     setBody((prev) => prev + emoji);
     setShowEmoji(false);
+  }
+
+  async function handleAiDraft() {
+    setDrafting(true);
+    try {
+      const res = await api.post(`/api/admin/leads/${entityId}/draft-outreach`, { channel: tab });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.body) {
+        setBody(data.body);
+        if (tab === "email" && data.subject) setSubject(data.subject);
+        show("AI draft ready — review before sending.", "success");
+      } else {
+        show(data?.detail || "Couldn't generate a draft.", "error");
+      }
+    } catch {
+      show("Network error — couldn't generate a draft.", "error");
+    } finally {
+      setDrafting(false);
+    }
   }
 
   async function handleSend() {
@@ -288,6 +308,17 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
 
         {/* Compose box — pinned at the bottom */}
         <div className="flex-shrink-0 space-y-2">
+          {entityType === "leads" && (tab === "email" ? hasEmail : hasPhone) && (
+            <button
+              type="button"
+              onClick={handleAiDraft}
+              disabled={drafting}
+              className="flex items-center gap-1.5 text-xs text-gemini-purple hover:text-white transition-colors disabled:opacity-50"
+            >
+              <Sparkles size={13} className={drafting ? "animate-pulse" : ""} />
+              {drafting ? "Drafting…" : "Draft with AI"}
+            </button>
+          )}
           {tab === "email" && (
             <Input label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject line" />
           )}

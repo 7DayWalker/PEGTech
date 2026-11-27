@@ -129,7 +129,11 @@ def draft_email(lead_name: str, business_name: Optional[str] = None,
     opening = tone_openings.get(tone, tone_openings["professional"])
 
     service_line = f" our {service} services" if service else " our services"
-    business_line = f" at {business_name}" if business_name else ""
+    # "like at Foo" / "like grow" (when business_name is None, the
+    # preceding version left this empty and dropped the object of "like"
+    # entirely) were both broken sentences — "like X" needs an object with
+    # no preposition, and always needs *some* object.
+    business_line = f" {business_name}" if business_name else " yours"
 
     body = f"""{opening}
 

@@ -13,6 +13,7 @@ from app.deps import require_staff, require_admin
 from app import notifications
 from app import lead_import
 from app import lead_scoring
+from app import outreach_drafting
 from app.phone_utils import phones_match
 from app.briefing import build_briefing
 
@@ -359,6 +360,23 @@ def rescore_lead(lead_id: int, request: Request,
     db.commit()
     db.refresh(lead)
     return lead
+
+
+@router.post("/leads/{lead_id}/draft-outreach", response_model=schemas.OutreachDraftOut)
+def draft_outreach(lead_id: int, payload: schemas.OutreachDraftIn, request: Request,
+                    db: Session = Depends(get_db), _=Depends(require_staff())):
+    """One-click AI-drafted email/WhatsApp outreach for a lead, pulling in
+    its research notes — does NOT send anything, just returns a draft for
+    staff to review/edit in the Message Center compose box before sending."""
+    lead = db.get(models.Lead, lead_id)
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found.")
+    if payload.channel == "email" and not lead.email:
+        raise HTTPException(status_code=400, detail="This lead has no email address on file.")
+    if payload.channel == "whatsapp" and not lead.phone:
+        raise HTTPException(status_code=400, detail="This lead has no phone number on file.")
+    result = outreach_drafting.draft_outreach_ai(lead, payload.channel, key_points=payload.key_points)
+    return result
 
 
 def _convert_won_lead_to_client(db: Session, lead: models.Lead) -> None:

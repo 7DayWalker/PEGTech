@@ -299,6 +299,20 @@ class LeadOut(LeadBase):
         from_attributes = True
 
 
+class OutreachDraftIn(BaseModel):
+    channel: Literal["email", "whatsapp"]
+    # Optional staff-provided talking points to weave into the draft
+    # (e.g. "mention we can start next month") — the AI prompt, not a
+    # literal insertion, so it still reads as one coherent message.
+    key_points: Optional[str] = Field(None, max_length=1000)
+
+
+class OutreachDraftOut(BaseModel):
+    subject: Optional[str] = None
+    body: str
+    ai_provider: Optional[str] = None
+
+
 # ---------------------------------------------------------------------------
 # Campaigns
 # ---------------------------------------------------------------------------
