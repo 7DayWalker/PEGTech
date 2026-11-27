@@ -18,6 +18,7 @@ import { AdminPortal } from "./pages/AdminPortal";
 import { ClientsAdmin } from "./pages/admin/ClientsAdmin";
 import { ProjectsAdmin } from "./pages/admin/ProjectsAdmin";
 import { LeadsAdmin } from "./pages/admin/LeadsAdmin";
+import { AuditReportsAdmin } from "./pages/admin/AuditReportsAdmin";
 import { NotFound } from "./pages/NotFound";
 import { ChatWidget } from "./components/ChatWidget";
 
@@ -43,6 +44,7 @@ function App() {
           <Route path="/admin/clients" element={<ClientsAdmin />} />
           <Route path="/admin/projects" element={<ProjectsAdmin />} />
           <Route path="/admin/leads" element={<LeadsAdmin />} />
+          <Route path="/admin/audits" element={<AuditReportsAdmin />} />
           <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/chat-widget" element={<ChatWidget />} />

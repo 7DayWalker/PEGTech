@@ -12,7 +12,11 @@ from app import notifications
 router = APIRouter(prefix="/api/leads", tags=["leads"])
 
 
-@router.get("/", response_model=list[schemas.LeadOut])
+# "" rather than "/" — same latent routing bug fixed in routers/audit.py
+# and routers/enquiries.py: a bare "/" route under a prefix only matches
+# WITH a trailing slash, and this app's SPA catch-all intercepts and
+# 404s the slash-less form before Starlette's own redirect ever fires.
+@router.get("", response_model=list[schemas.LeadOut])
 def list_leads(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
     return db.query(models.Lead).all()
 

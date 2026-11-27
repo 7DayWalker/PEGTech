@@ -47,11 +47,6 @@ def run_audit(payload: schemas.AuditIn, db: Session = Depends(get_db)):
     return result
 
 
-@router.get("/audit/reports")
-def list_audit_reports(db: Session = Depends(get_db)):
-    return db.query(models.AuditReport).order_by(models.AuditReport.created_at.desc()).limit(50).all()
-
-
 @router.post("/enquiries")
 def create_enquiry(payload: schemas.EnquiryIn, db: Session = Depends(get_db)):
     enquiry = models.Enquiry(**payload.model_dump())

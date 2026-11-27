@@ -394,12 +394,12 @@ export function AdminPortal() {
                 </p>
               </Link>
               <Link
-                to="/audit"
+                to="/admin/audits"
                 className="p-4 rounded-xl border border-white/10 hover:bg-white/5 hover:border-white/20 transition-colors text-center"
               >
                 <BarChart3 size={24} className="mx-auto mb-2 text-gray-400 group-hover:text-gemini-blue transition-colors" />
                 <p className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
-                  Run AI Audit
+                  Audit Reports
                 </p>
               </Link>
             </div>
