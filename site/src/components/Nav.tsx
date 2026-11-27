@@ -1,7 +1,7 @@
 /** Floating frosted-glass pill navigation bar. */
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, X, LayoutDashboard, LogOut, Sparkles } from "lucide-react";
 import logoMark from "../assets/brand/pegtech-icon-mark.png";
 import { useAuth } from "../lib/AuthContext";
 
@@ -27,9 +27,9 @@ export function Nav() {
   ];
 
   return (
-    <div className="sticky top-4 z-50 px-4">
-      <nav className="nav-pill max-w-5xl mx-auto">
-        <div className="flex items-center justify-between h-16 px-4 sm:px-6">
+    <div className="sticky top-4 z-50 px-4 sm:px-6 lg:px-8">
+      <nav className="nav-pill max-w-7xl mx-auto">
+        <div className="flex items-center justify-between h-[4.5rem] px-5 sm:px-8">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg tracking-tight shrink-0">
             <img src={logoMark} alt="PEGTech" className="h-8 w-8 object-contain" />
             <span>PEG<span className="text-gradient">Tech</span></span>
@@ -49,9 +49,18 @@ export function Nav() {
                 {l.label}
               </Link>
             ))}
+            <Link
+              to="/audit"
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full transition-colors font-semibold ${
+                location.pathname === "/audit" ? "bg-white/10" : "hover:bg-white/5"
+              }`}
+            >
+              <Sparkles size={14} className="text-gemini-purple" />
+              <span className="text-transparent bg-clip-text bg-gemini-gradient">Free Audit</span>
+            </Link>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-4 shrink-0">
             {!isAuthPage && user && (
               <div className="hidden md:flex items-center gap-3">
                 {user.typ === "staff" && (
@@ -102,6 +111,14 @@ export function Nav() {
                 {l.label}
               </Link>
             ))}
+            <Link
+              to="/audit"
+              className="flex items-center gap-1.5 px-4 py-2.5 text-gemini-purple hover:text-white hover:bg-white/5 rounded-xl transition-colors font-semibold"
+              onClick={() => setOpen(false)}
+            >
+              <Sparkles size={15} />
+              Free Audit
+            </Link>
             <Link
               to="/book"
               className="block mt-2 px-4 py-2.5 bg-gemini-gradient text-white rounded-xl text-center font-semibold"
