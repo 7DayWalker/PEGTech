@@ -204,9 +204,15 @@ def _get_ai_summary(counts: dict, items: list[dict]) -> tuple[Optional[str], Opt
     # category (e.g. "1 stale hot lead" today vs. a completely different
     # lead tomorrow) must NOT share a cached summary describing the wrong
     # business.
-    identity = tuple(sorted(
+    # Sorted by a string-cast key, not the raw tuples — items mix int ids
+    # with None (e.g. a visitor-sourced escalation has neither a lead_id
+    # nor a client_id), and Python can't compare None to int, which used
+    # to blow up this whole endpoint with a 500 the moment a briefing
+    # contained more than one "shape" of item at once.
+    raw_identity = [
         (i.get("lead_id"), i.get("client_id"), i.get("escalation_id"), i["type"]) for i in items
-    ))
+    ]
+    identity = tuple(sorted(raw_identity, key=lambda t: tuple("" if x is None else str(x) for x in t)))
     cache_key = str(identity)
     cached = _AI_SUMMARY_CACHE.get(cache_key)
     now = time.monotonic()

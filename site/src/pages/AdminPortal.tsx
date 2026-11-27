@@ -4,11 +4,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTitle } from "../lib/useTitle";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
+import { useToast } from "../lib/Toast";
 import { Card } from "../components/Card";
 import { Container } from "../components/Section";
 import { Badge } from "../components/Badge";
 import { GlowBackground } from "../components/GlowBackground";
-import { Users, Folder, Mail, BarChart3, AlertTriangle, RefreshCw, Sparkles, Flame, Eye, MessageCircle, Siren, TrendingUp } from "lucide-react";
+import { Modal } from "../components/Modal";
+import { Textarea } from "../components/Input";
+import { Button } from "../components/Button";
+import { Users, Folder, Mail, BarChart3, AlertTriangle, RefreshCw, Sparkles, Flame, Eye, MessageCircle, Siren, TrendingUp, ExternalLink } from "lucide-react";
 
 const BRIEFING_ICONS: Record<string, any> = {
   stale_hot_lead: Flame,
@@ -45,6 +49,9 @@ export function AdminPortal() {
   const [topLeadsLoading, setTopLeadsLoading] = useState(true);
   const [escalations, setEscalations] = useState<any[]>([]);
   const [resolvingId, setResolvingId] = useState<number | null>(null);
+  const [viewingEscalation, setViewingEscalation] = useState<any | null>(null);
+  const [resolveNote, setResolveNote] = useState("");
+  const { show } = useToast();
 
   // Auth gating lives here, driven by the shared session state — NOT by
   // whether a single data call happens to succeed. That separation is the
@@ -108,17 +115,38 @@ export function AdminPortal() {
     }).catch(() => {});
   }
 
-  async function resolveEscalation(id: number) {
+  async function resolveEscalation(id: number, note?: string) {
     setResolvingId(id);
     try {
-      const res = await api.put(`/api/admin/escalations/${id}`, { resolve_note: "Resolved from dashboard." });
+      const res = await api.put(`/api/admin/escalations/${id}`, { resolve_note: note || "Resolved from dashboard." });
       if (res.ok) {
         setEscalations((prev) => prev.filter((e) => e.id !== id));
+        setViewingEscalation((prev: any) => (prev && prev.id === id ? null : prev));
         loadStats();
+        show("Escalation resolved.", "success");
+      } else {
+        show("Couldn't resolve escalation.", "error");
       }
     } finally {
       setResolvingId(null);
     }
+  }
+
+  /** Clicking a flagged escalation anywhere on the dashboard opens this
+   * in place — it's the only record of a visitor-sourced escalation (no
+   * Lead/Client exists for an anonymous site visitor), and even for a
+   * client-sourced one, the triggering message lives in a different table
+   * than the Message Center reads from. A generic "go to the Leads/
+   * Clients list and find it yourself" link was the actual bug being
+   * fixed here. */
+  function openEscalation(id: number) {
+    const esc = escalations.find((e) => e.id === id);
+    if (!esc) {
+      show("That escalation was already resolved.", "success");
+      return;
+    }
+    setResolveNote("");
+    setViewingEscalation(esc);
   }
 
   useEffect(() => {
@@ -247,13 +275,8 @@ export function AdminPortal() {
                 {briefing.items.slice(0, 8).map((item: any, idx: number) => {
                   const Icon = BRIEFING_ICONS[item.type] || AlertTriangle;
                   const color = BRIEFING_COLORS[item.type] || "text-gray-400";
-                  const to = item.lead_id ? "/admin/leads" : item.client_id ? "/admin/clients" : "/admin/leads";
-                  return (
-                    <Link
-                      key={idx}
-                      to={to}
-                      className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors"
-                    >
+                  const inner = (
+                    <>
                       <div className={`w-7 h-7 rounded-lg bg-dark-700 flex items-center justify-center shrink-0 ${color}`}>
                         <Icon size={14} />
                       </div>
@@ -261,6 +284,36 @@ export function AdminPortal() {
                         <p className="text-sm font-medium text-gray-200 truncate">{item.title}</p>
                         {item.detail && <p className="text-xs text-gray-500 truncate">{item.detail}</p>}
                       </div>
+                    </>
+                  );
+                  const rowClass = "flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors w-full text-left";
+
+                  // An escalation opens its own detail (transcript + AI
+                  // summary + resolve) in place — there's often no Lead/
+                  // Client record to deep-link to at all (an anonymous
+                  // website visitor isn't either), so this is the only
+                  // place that ever shows the actual flagged content.
+                  if (item.type === "pending_escalation") {
+                    return (
+                      <button key={idx} onClick={() => openEscalation(item.escalation_id)} className={rowClass}>
+                        {inner}
+                      </button>
+                    );
+                  }
+
+                  // Everything else deep-links to the specific record —
+                  // previously these all pointed at the generic Leads/
+                  // Clients list, leaving staff to go hunt for the one
+                  // that was actually flagged.
+                  const action = item.type === "unread_message" ? "message" : "edit";
+                  const to = item.lead_id
+                    ? `/admin/leads?lead=${item.lead_id}&action=${action}`
+                    : item.client_id
+                      ? `/admin/clients?client=${item.client_id}&action=${action}`
+                      : "/admin/leads";
+                  return (
+                    <Link key={idx} to={to} className={rowClass}>
+                      {inner}
                     </Link>
                   );
                 })}
@@ -372,7 +425,8 @@ export function AdminPortal() {
                   {escalations.slice(0, 5).map((esc) => (
                     <div
                       key={esc.id}
-                      className="flex items-start justify-between gap-3 p-3 rounded-lg bg-black/20 border border-white/5"
+                      className="flex items-start justify-between gap-3 p-3 rounded-lg bg-black/20 border border-white/5 hover:border-white/15 transition-colors cursor-pointer"
+                      onClick={() => openEscalation(esc.id)}
                     >
                       <div className="min-w-0">
                         <p className="text-xs uppercase tracking-wide text-gray-500">
@@ -381,7 +435,7 @@ export function AdminPortal() {
                         <p className="text-sm text-gray-200">{esc.ai_summary || esc.summary}</p>
                       </div>
                       <button
-                        onClick={() => resolveEscalation(esc.id)}
+                        onClick={(e) => { e.stopPropagation(); resolveEscalation(esc.id); }}
                         disabled={resolvingId === esc.id}
                         className="shrink-0 text-xs px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/10 disabled:opacity-50 transition-colors"
                       >
@@ -394,6 +448,87 @@ export function AdminPortal() {
             </Card>
           )}
         </Container>
+
+        <Modal
+          isOpen={!!viewingEscalation}
+          onClose={() => setViewingEscalation(null)}
+          title="Escalation"
+          size="lg"
+        >
+          {viewingEscalation && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <Badge variant="warning">{viewingEscalation.sentiment || "flagged"}</Badge>
+                <span className="text-gray-500">
+                  {viewingEscalation.source} · {new Date(viewingEscalation.created_at).toLocaleString()}
+                </span>
+                {viewingEscalation.client_id && (
+                  <Link
+                    to={`/admin/clients?client=${viewingEscalation.client_id}&action=edit`}
+                    className="ml-auto inline-flex items-center gap-1 text-gemini-blue hover:underline"
+                  >
+                    View client <ExternalLink size={12} />
+                  </Link>
+                )}
+                {viewingEscalation.lead_id && (
+                  <Link
+                    to={`/admin/leads?lead=${viewingEscalation.lead_id}&action=edit`}
+                    className="ml-auto inline-flex items-center gap-1 text-gemini-blue hover:underline"
+                  >
+                    View lead <ExternalLink size={12} />
+                  </Link>
+                )}
+                {!viewingEscalation.client_id && !viewingEscalation.lead_id && (
+                  <span className="ml-auto text-gray-500 italic">Anonymous website visitor — no linked record</span>
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Reason</p>
+                <p className="text-sm text-gray-200">{viewingEscalation.reason}</p>
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500 mb-1 flex items-center gap-1">
+                  <Sparkles size={12} className="text-gemini-purple" /> AI summary
+                </p>
+                <p className="text-sm text-gray-200">{viewingEscalation.ai_summary || viewingEscalation.summary}</p>
+              </div>
+
+              {viewingEscalation.transcript && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Transcript</p>
+                  <pre className="text-sm text-gray-300 whitespace-pre-wrap bg-black/30 rounded-lg p-3 max-h-60 overflow-y-auto font-sans">
+                    {viewingEscalation.transcript}
+                  </pre>
+                </div>
+              )}
+
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Resolution note (optional)</p>
+                <Textarea
+                  value={resolveNote}
+                  onChange={(e) => setResolveNote(e.target.value)}
+                  placeholder="What did you do about this?"
+                  rows={2}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={() => setViewingEscalation(null)}>
+                  Close
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => resolveEscalation(viewingEscalation.id, resolveNote)}
+                  disabled={resolvingId === viewingEscalation.id}
+                >
+                  {resolvingId === viewingEscalation.id ? "Resolving…" : "Mark resolved"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
     </div>
   );
 }

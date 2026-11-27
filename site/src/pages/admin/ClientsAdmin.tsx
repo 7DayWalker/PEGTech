@@ -1,6 +1,6 @@
 /** Staff dashboard — Clients management. */
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTitle } from "../../lib/useTitle";
 import { api } from "../../lib/api";
 import { useToast } from "../../lib/Toast";
@@ -88,6 +88,7 @@ export function ClientsAdmin() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   function load(opts: { silent?: boolean } = {}) {
     if (!opts.silent) setLoading(true);
@@ -102,6 +103,31 @@ export function ClientsAdmin() {
   }
 
   useEffect(() => load(), []);
+
+  // Deep-link support: ?client=<id>&action=edit|message — lets the
+  // Dashboard's Daily Briefing (and Escalation detail) open the exact
+  // flagged client directly instead of dumping staff onto the generic
+  // client list to go hunt for it themselves.
+  useEffect(() => {
+    const clientId = searchParams.get("client");
+    if (!clientId || clients.length === 0) return;
+    const client = clients.find((c) => c.id === Number(clientId));
+    if (client) {
+      if (searchParams.get("action") === "message") {
+        setMessagingClient(client);
+      } else {
+        openEdit(client);
+      }
+    } else {
+      show("That client couldn't be found — it may have been deleted.", "error");
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete("client");
+    next.delete("action");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients]);
+
   // Quietly refresh in the background so new inbound messages/reactions
   // show up as an unread badge without ever needing a manual reload.
   usePolling(() => load({ silent: true }), 15000);

@@ -1,6 +1,6 @@
 /** Staff dashboard — Leads pipeline management. */
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTitle } from "../../lib/useTitle";
 import { api } from "../../lib/api";
 import { useToast } from "../../lib/Toast";
@@ -92,6 +92,7 @@ export function LeadsAdmin() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [scoringId, setScoringId] = useState<number | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   function load(opts: { silent?: boolean } = {}) {
     if (!opts.silent) setLoading(true);
@@ -102,6 +103,30 @@ export function LeadsAdmin() {
   }
 
   useEffect(() => load(), []);
+
+  // Deep-link support: ?lead=<id>&action=edit|message — lets the Dashboard's
+  // Daily Briefing open the exact flagged lead directly instead of dumping
+  // staff onto the generic pipeline view to go hunt for it themselves.
+  useEffect(() => {
+    const leadId = searchParams.get("lead");
+    if (!leadId || leads.length === 0) return;
+    const lead = leads.find((l) => l.id === Number(leadId));
+    if (lead) {
+      if (searchParams.get("action") === "message") {
+        setMessagingLead(lead);
+      } else {
+        openEdit(lead);
+      }
+    } else {
+      show("That lead couldn't be found — it may have been deleted.", "error");
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete("lead");
+    next.delete("action");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leads]);
+
   // Quietly refresh in the background so new inbound messages/reactions
   // show up as an unread badge without ever needing a manual reload.
   usePolling(() => load({ silent: true }), 15000);
