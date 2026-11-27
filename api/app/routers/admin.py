@@ -14,6 +14,7 @@ from app import notifications
 from app import lead_import
 from app import lead_scoring
 from app import outreach_drafting
+from app import escalation_summary
 from app.phone_utils import phones_match
 from app.briefing import build_briefing
 
@@ -438,17 +439,35 @@ def create_campaign(payload: schemas.CampaignCreate, request: Request,
 # ── Escalations ──
 @router.get("/escalations", response_model=list[schemas.EscalationOut])
 def list_escalations(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
-    return db.query(models.Escalation).all()
+    return db.query(models.Escalation).order_by(models.Escalation.created_at.desc()).all()
+
+
+@router.post("/escalations/{esc_id}/resummarize", response_model=schemas.EscalationOut)
+def resummarize_escalation(esc_id: int, request: Request,
+                           db: Session = Depends(get_db), _=Depends(require_staff())):
+    """Re-run the AI summary on demand — e.g. the background task failed
+    silently on creation (AI provider outage) and ai_summary still just
+    mirrors the raw `summary` field."""
+    esc = db.get(models.Escalation, esc_id)
+    if not esc:
+        raise HTTPException(status_code=404, detail="Escalation not found.")
+    result = escalation_summary.summarize_escalation_ai(esc)
+    esc.ai_summary = result["ai_summary"]
+    esc.ai_summary_provider = result["ai_provider"]
+    db.commit()
+    db.refresh(esc)
+    return esc
 
 
 @router.put("/escalations/{esc_id}", response_model=schemas.EscalationOut)
-def resolve_escalation(esc_id: int, payload: schemas.EscalationCreate, request: Request,
+def resolve_escalation(esc_id: int, payload: schemas.EscalationResolveIn, request: Request,
                        db: Session = Depends(get_db), _=Depends(require_staff())):
     esc = db.get(models.Escalation, esc_id)
     if not esc:
         raise HTTPException(status_code=404, detail="Escalation not found.")
     esc.status = "resolved"
-    esc.resolve_note = payload.summary
+    esc.resolve_note = payload.resolve_note
+    esc.resolved_at = datetime.utcnow()  # previously never set — resolved rows looked identical to open ones by timestamp
     db.commit()
     db.refresh(esc)
     return esc

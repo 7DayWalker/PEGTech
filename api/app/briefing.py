@@ -165,7 +165,11 @@ def build_briefing(db: Session, with_ai_summary: bool = True) -> dict:
             "escalation_id": esc.id,
             "client_id": esc.client_id,
             "title": esc.reason or "Escalation needs attention",
-            "detail": esc.summary,
+            # ai_summary is populated shortly after creation by a background
+            # task (see escalation_summary.py) — until that lands, or if the
+            # AI call fails, it's seeded with the raw `summary` so this is
+            # never blank.
+            "detail": esc.ai_summary or esc.summary,
         })
 
     result = {

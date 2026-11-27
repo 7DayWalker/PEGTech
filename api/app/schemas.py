@@ -530,6 +530,31 @@ class AiInteractionOut(BaseModel):
 # ---------------------------------------------------------------------------
 # Escalations
 # ---------------------------------------------------------------------------
+class ClientMessageIn(BaseModel):
+    body: str = Field(min_length=1, max_length=4000)
+    # Explicit "flag for staff" action in the client portal, independent of
+    # whatever the automatic sentiment check decides — a client calmly
+    # asking for urgent help shouldn't have to sound angry to get noticed.
+    flag_for_staff: bool = False
+
+
+class ClientMessageOut(BaseModel):
+    id: int
+    client_id: int
+    sender: str
+    author: Optional[str] = None
+    body: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ClientMessagePostResult(BaseModel):
+    message: ClientMessageOut
+    escalated: bool
+
+
 class EscalationBase(BaseModel):
     source: str = Field(min_length=1, max_length=40)
     summary: str = Field(min_length=1)
@@ -540,13 +565,20 @@ class EscalationBase(BaseModel):
 
 
 class EscalationCreate(EscalationBase):
-    client_id: int
+    # Optional — a visitor-sourced (CSR widget) escalation has neither a
+    # client nor a lead yet, only a session_id.
+    client_id: Optional[int] = None
+    lead_id: Optional[int] = None
+    session_id: Optional[str] = Field(None, max_length=100)
 
 
 class EscalationOut(EscalationBase):
     id: int
-    client_id: int
+    client_id: Optional[int] = None
+    lead_id: Optional[int] = None
+    session_id: Optional[str] = None
     ai_summary: Optional[str] = None
+    ai_summary_provider: Optional[str] = None
     assignee_id: Optional[int] = None
     resolved_at: Optional[datetime] = None
     resolve_note: Optional[str] = None
@@ -554,6 +586,12 @@ class EscalationOut(EscalationBase):
 
     class Config:
         from_attributes = True
+
+
+class EscalationResolveIn(BaseModel):
+    """Body for PUT /escalations/{id} — resolving one doesn't need to
+    re-submit the whole escalation record, just an optional closing note."""
+    resolve_note: Optional[str] = Field(None, max_length=2000)
 
 
 # ---------------------------------------------------------------------------

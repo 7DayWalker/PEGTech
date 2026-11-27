@@ -43,6 +43,8 @@ export function AdminPortal() {
   const [briefingLoading, setBriefingLoading] = useState(true);
   const [topLeads, setTopLeads] = useState<any[]>([]);
   const [topLeadsLoading, setTopLeadsLoading] = useState(true);
+  const [escalations, setEscalations] = useState<any[]>([]);
+  const [resolvingId, setResolvingId] = useState<number | null>(null);
 
   // Auth gating lives here, driven by the shared session state — NOT by
   // whether a single data call happens to succeed. That separation is the
@@ -97,11 +99,34 @@ export function AdminPortal() {
     }).catch(() => setTopLeadsLoading(false));
   }
 
+  function loadEscalations() {
+    api.get("/api/admin/escalations").then(async (res) => {
+      if (res.ok) {
+        const all = await res.json();
+        setEscalations(all.filter((e: any) => e.status === "queued"));
+      }
+    }).catch(() => {});
+  }
+
+  async function resolveEscalation(id: number) {
+    setResolvingId(id);
+    try {
+      const res = await api.put(`/api/admin/escalations/${id}`, { resolve_note: "Resolved from dashboard." });
+      if (res.ok) {
+        setEscalations((prev) => prev.filter((e) => e.id !== id));
+        loadStats();
+      }
+    } finally {
+      setResolvingId(null);
+    }
+  }
+
   useEffect(() => {
     if (user && user.typ === "staff") {
       loadStats();
       loadBriefing();
       loadTopLeads();
+      loadEscalations();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -327,18 +352,45 @@ export function AdminPortal() {
             </div>
           </Card>
 
-          {/* Escalations alert */}
+          {/* Escalations alert — each one shows its AI-written summary
+              (falls back to the raw flagged message if the summary hasn't
+              landed yet) instead of just a count, so staff can judge
+              urgency without opening anything. */}
           {stats.pending_escalations > 0 && (
             <Card padding="md" className="border-l-4 border-blue-500 bg-white/5">
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-3 mb-3">
                 <AlertTriangle size={20} className="text-gemini-purple mt-0.5" />
                 <div>
                   <h4 className="font-bold text-gemini-pink">Pending Escalations</h4>
                   <p className="text-sm text-blue-200">
-                    You have {stats.pending_escalations} escalation(s) waiting for attention.
+                    {stats.pending_escalations} escalation(s) waiting for attention.
                   </p>
                 </div>
               </div>
+              {escalations.length > 0 && (
+                <div className="space-y-2">
+                  {escalations.slice(0, 5).map((esc) => (
+                    <div
+                      key={esc.id}
+                      className="flex items-start justify-between gap-3 p-3 rounded-lg bg-black/20 border border-white/5"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs uppercase tracking-wide text-gray-500">
+                          {esc.source} {esc.sentiment ? `· ${esc.sentiment}` : ""}
+                        </p>
+                        <p className="text-sm text-gray-200">{esc.ai_summary || esc.summary}</p>
+                      </div>
+                      <button
+                        onClick={() => resolveEscalation(esc.id)}
+                        disabled={resolvingId === esc.id}
+                        className="shrink-0 text-xs px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/10 disabled:opacity-50 transition-colors"
+                      >
+                        {resolvingId === esc.id ? "Resolving…" : "Resolve"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           )}
         </Container>

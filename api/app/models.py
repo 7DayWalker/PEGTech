@@ -373,15 +373,28 @@ class AiInteraction(Base):
 # Escalations & QA
 # ---------------------------------------------------------------------------
 class Escalation(Base):
-    """Client escalations."""
+    """Flagged conversations needing staff attention — from an existing
+    client (e.g. a frustrated WhatsApp reply) or an anonymous website
+    visitor (the public CSR chat widget flagging itself). client_id is
+    nullable specifically for the visitor case: there's no Client row to
+    attach to someone who isn't a customer yet."""
     __tablename__ = "escalations"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    client_id: Mapped[int] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), nullable=False, index=True)
+    client_id: Mapped[Optional[int]] = mapped_column(ForeignKey("clients.id", ondelete="CASCADE"), nullable=True, index=True)
+    # Set when a visitor (not yet a lead or client) triggered this via the
+    # public CSR widget — links back to the AiInteraction/session for
+    # context. Leads intentionally do NOT get escalations of their own:
+    # every lead reply going through sentiment detection would flood this
+    # queue with low-value noise ("not interested" etc.) in a way an
+    # existing client's frustration doesn't.
+    lead_id: Mapped[Optional[int]] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"), nullable=True, index=True)
+    session_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
     source: Mapped[str] = mapped_column(String(40), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     transcript: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ai_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ai_summary_provider: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     reason: Mapped[str] = mapped_column(String(120), nullable=False)
     sentiment: Mapped[str] = mapped_column(String(20), default="neutral")
     status: Mapped[str] = mapped_column(String(40), default="queued")  # queued, claimed, resolved
@@ -391,6 +404,7 @@ class Escalation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     client = relationship("Client", back_populates="escalations")
+    lead = relationship("Lead")
 
 
 class QAReview(Base):
