@@ -2,6 +2,7 @@
 Messaging routes — staff manually email/WhatsApp a lead or client, and view
 the message history logged for each.
 """
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.db import get_db
@@ -136,12 +137,19 @@ async def whatsapp_lead_media(lead_id: int, file: UploadFile = File(...), captio
 @router.get("/leads/{lead_id}/messages", response_model=list[schemas.MessageLogOut])
 def list_lead_messages(lead_id: int, request: Request,
                         db: Session = Depends(get_db), _=Depends(require_staff())):
-    return (
+    messages = (
         db.query(models.MessageLog)
         .filter_by(lead_id=lead_id)
         .order_by(models.MessageLog.created_at.desc())
         .all()
     )
+    # Viewing (or polling) the thread counts as having read it — clears the
+    # "unread" badge on the Leads list. Cheap single-column update.
+    lead = db.get(models.Lead, lead_id)
+    if lead is not None:
+        lead.last_read_at = datetime.utcnow()
+        db.commit()
+    return messages
 
 
 # ── Clients ──
@@ -183,9 +191,16 @@ async def whatsapp_client_media(client_id: int, file: UploadFile = File(...), ca
 @router.get("/clients/{client_id}/messages", response_model=list[schemas.MessageLogOut])
 def list_client_messages(client_id: int, request: Request,
                           db: Session = Depends(get_db), _=Depends(require_staff())):
-    return (
+    messages = (
         db.query(models.MessageLog)
         .filter_by(client_id=client_id)
         .order_by(models.MessageLog.created_at.desc())
         .all()
     )
+    # Viewing (or polling) the thread counts as having read it — clears the
+    # "unread" badge on the Clients list. Cheap single-column update.
+    client = db.get(models.Client, client_id)
+    if client is not None:
+        client.last_read_at = datetime.utcnow()
+        db.commit()
+    return messages

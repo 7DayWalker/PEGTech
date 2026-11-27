@@ -108,6 +108,7 @@ class ClientOut(ClientBase):
     strategist: Optional[AdminUserMiniOut] = None
     delivery_lead: Optional[AdminUserMiniOut] = None
     success_lead: Optional[AdminUserMiniOut] = None
+    has_unread: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -283,6 +284,7 @@ class LeadUpdate(BaseModel):
 class LeadOut(LeadBase):
     id: int
     last_contacted_at: Optional[datetime] = None
+    has_unread: bool = False
     created_at: datetime
     updated_at: datetime
     converted_client_id: Optional[int] = None

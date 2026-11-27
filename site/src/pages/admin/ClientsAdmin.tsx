@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useTitle } from "../../lib/useTitle";
 import { api } from "../../lib/api";
 import { useToast } from "../../lib/Toast";
+import { usePolling } from "../../lib/usePolling";
 import { Card } from "../../components/Card";
 import { Container } from "../../components/Section";
 import { Badge } from "../../components/Badge";
@@ -38,6 +39,7 @@ type Client = {
   delivery_lead?: Staff | null;
   success_lead?: Staff | null;
   start_date?: string | null;
+  has_unread?: boolean;
 };
 
 const emptyForm = {
@@ -87,19 +89,22 @@ export function ClientsAdmin() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  function load() {
-    setLoading(true);
+  function load(opts: { silent?: boolean } = {}) {
+    if (!opts.silent) setLoading(true);
     Promise.all([
       api.get("/api/admin/clients").then((r) => (r.ok ? r.json() : [])),
       api.get("/api/admin/staff").then((r) => (r.ok ? r.json() : [])),
     ]).then(([clientsData, staffData]) => {
       setClients(clientsData);
       setStaff(staffData);
-      setLoading(false);
+      if (!opts.silent) setLoading(false);
     });
   }
 
-  useEffect(load, []);
+  useEffect(() => load(), []);
+  // Quietly refresh in the background so new inbound messages/reactions
+  // show up as an unread badge without ever needing a manual reload.
+  usePolling(() => load({ silent: true }), 15000);
 
   const filtered = useMemo(() => {
     return clients.filter((c) => {
@@ -275,10 +280,13 @@ export function ClientsAdmin() {
                           <button
                             onClick={() => setMessagingClient(c)}
                             disabled={!c.email && !c.phone}
-                            className="text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="relative text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                             aria-label={`Message ${c.company}`}
                           >
                             <MessageSquare size={16} />
+                            {c.has_unread && (
+                              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_2px_rgba(10,10,16,0.9)]" />
+                            )}
                           </button>
                           <button
                             onClick={() => openEdit(c)}

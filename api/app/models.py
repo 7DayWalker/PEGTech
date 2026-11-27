@@ -70,6 +70,10 @@ class Client(Base):
     delivery_lead_id: Mapped[Optional[int]] = mapped_column(ForeignKey("admin_users.id"), nullable=True)
     success_lead_id: Mapped[Optional[int]] = mapped_column(ForeignKey("admin_users.id"), nullable=True)
     start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    # Last time any staff member viewed this client's Message Center —
+    # drives the "unread message" badge on the Clients list (shared across
+    # staff; this is a single shared inbox, not per-user read state).
+    last_read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -198,6 +202,10 @@ class Lead(Base):
     converted_client_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("clients.id", ondelete="SET NULL"), nullable=True,
     )
+    # Last time any staff member viewed this lead's Message Center — drives
+    # the "unread message" badge on the Leads list (shared across staff;
+    # this is a single shared inbox, not per-user read state).
+    last_read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     sends = relationship("CampaignSend", back_populates="lead", cascade="all, delete-orphan")
 

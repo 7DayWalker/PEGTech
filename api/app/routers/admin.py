@@ -31,14 +31,37 @@ def list_staff(request: Request, db: Session = Depends(get_db), _=Depends(requir
     return db.query(models.AdminUser).filter_by(is_active=True).order_by(models.AdminUser.name).all()
 
 
+def _unread_ids(db: Session, model, fk_column) -> set[int]:
+    """IDs of leads/clients with an inbound WhatsApp/email message newer than
+    their last_read_at (or that have never been read at all). Powers the
+    'unread' badge on the Leads/Clients list pages — a single query, not
+    N+1, so it's cheap to run on every list load."""
+    rows = (
+        db.query(fk_column)
+        .join(model, model.id == fk_column)
+        .filter(models.MessageLog.direction == "inbound")
+        .filter(fk_column.isnot(None))
+        .filter(
+            (model.last_read_at.is_(None)) | (models.MessageLog.created_at > model.last_read_at)
+        )
+        .distinct()
+        .all()
+    )
+    return {row[0] for row in rows}
+
+
 # ── Clients ──
 @router.get("/clients", response_model=list[schemas.ClientOut])
 def list_clients(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
-    return db.query(models.Client).options(
+    clients = db.query(models.Client).options(
         joinedload(models.Client.strategist),
         joinedload(models.Client.delivery_lead),
         joinedload(models.Client.success_lead),
     ).all()
+    unread = _unread_ids(db, models.Client, models.MessageLog.client_id)
+    for c in clients:
+        c.has_unread = c.id in unread
+    return clients
 
 
 @router.post("/clients", response_model=schemas.ClientOut)
@@ -82,7 +105,11 @@ def create_project(payload: schemas.ProjectCreate, request: Request,
 # ── Leads ──
 @router.get("/leads", response_model=list[schemas.LeadOut])
 def list_leads(request: Request, db: Session = Depends(get_db), _=Depends(require_staff())):
-    return db.query(models.Lead).all()
+    leads = db.query(models.Lead).all()
+    unread = _unread_ids(db, models.Lead, models.MessageLog.lead_id)
+    for l in leads:
+        l.has_unread = l.id in unread
+    return leads
 
 
 @router.post("/leads", response_model=schemas.LeadOut)

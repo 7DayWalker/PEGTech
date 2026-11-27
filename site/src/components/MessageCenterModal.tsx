@@ -16,6 +16,7 @@ import { EmojiPicker } from "./EmojiPicker";
 import { MediaBubble } from "./MediaBubble";
 import { api, uploadFile } from "../lib/api";
 import { useToast } from "../lib/Toast";
+import { usePolling } from "../lib/usePolling";
 
 type MessageLog = {
   id: number;
@@ -76,25 +77,48 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
   const [attachment, setAttachment] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const historyEndRef = useRef<HTMLDivElement>(null);
+  const historyContainerRef = useRef<HTMLDivElement>(null);
+  // Tracks whether the staff member is currently scrolled near the bottom
+  // of the thread — background polling only auto-scrolls them to a new
+  // message if they were already there, so it never yanks them away from
+  // something they're reading further up in the history.
+  const isNearBottomRef = useRef(true);
+  const historyRef = useRef<MessageLog[]>([]);
+  historyRef.current = history;
 
-  function loadHistory(scrollAfter = true) {
-    setLoadingHistory(true);
+  function handleHistoryScroll() {
+    const el = historyContainerRef.current;
+    if (!el) return;
+    isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
+
+  function loadHistory(isInitial = false) {
+    if (isInitial) setLoadingHistory(true);
+    const wasNearBottom = isNearBottomRef.current;
     api
       .get(`/api/admin/${entityType}/${entityId}/messages`)
       .then((r) => (r.ok ? r.json() : []))
-      .then((data) => {
+      .then((data: MessageLog[]) => {
+        const prev = historyRef.current;
+        // Server returns newest-first; a genuinely new message (not just a
+        // status update like sent -> delivered -> read) changes which
+        // message is at the front of that list.
+        const hasNewMessage = data[0]?.id !== prev[0]?.id;
         setHistory(data);
-        if (scrollAfter) {
+        if (hasNewMessage && (isInitial || wasNearBottom)) {
           // Wait a tick for the new rows to actually render before scrolling.
-          setTimeout(() => historyEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+          setTimeout(() => historyEndRef.current?.scrollIntoView({ behavior: isInitial ? "auto" : "smooth" }), 50);
         }
       })
-      .finally(() => setLoadingHistory(false));
+      .finally(() => {
+        if (isInitial) setLoadingHistory(false);
+      });
   }
 
   useEffect(() => {
     if (isOpen) {
-      loadHistory(false);
+      isNearBottomRef.current = true;
+      loadHistory(true);
       setSubject("");
       setBody("");
       setAttachment(null);
@@ -104,13 +128,10 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, entityId]);
 
-  // Jump to the latest message once history first loads for this conversation.
-  useEffect(() => {
-    if (!loadingHistory && history.length > 0) {
-      historyEndRef.current?.scrollIntoView({ behavior: "auto" });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingHistory]);
+  // Quietly re-check for new messages/reactions every few seconds while the
+  // chat is open, instead of requiring a page reload. Pauses automatically
+  // when the browser tab isn't visible.
+  usePolling(() => loadHistory(false), 4000, isOpen);
 
   function handlePickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -154,7 +175,8 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
       } else {
         show(data?.detail || "Couldn't send message.", "error");
       }
-      loadHistory();
+      isNearBottomRef.current = true; // we just sent a message — definitely scroll to it
+      loadHistory(true);
     } catch {
       show("Network error — couldn't send message.", "error");
     } finally {
@@ -191,7 +213,11 @@ export function MessageCenterModal({ isOpen, onClose, entityType, entityId, enti
         {!hasPhone && tab === "whatsapp" && <p className="text-xs text-amber-400 flex-shrink-0 mb-2">No phone number on file.</p>}
 
         {/* History — scrollable, oldest at top, newest at bottom, like a real chat */}
-        <div className="flex-1 min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-4 mb-3">
+        <div
+          ref={historyContainerRef}
+          onScroll={handleHistoryScroll}
+          className="flex-1 min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-4 mb-3"
+        >
           {loadingHistory ? (
             <p className="text-sm text-gray-500">Loading…</p>
           ) : history.length === 0 ? (

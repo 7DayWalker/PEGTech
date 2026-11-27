@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useTitle } from "../../lib/useTitle";
 import { api } from "../../lib/api";
 import { useToast } from "../../lib/Toast";
+import { usePolling } from "../../lib/usePolling";
 import { Card } from "../../components/Card";
 import { Container } from "../../components/Section";
 import { Badge } from "../../components/Badge";
@@ -34,6 +35,7 @@ type Lead = {
   email_opt_in?: boolean;
   notes?: string | null;
   converted_client_id?: number | null;
+  has_unread?: boolean;
 };
 
 const STAGES = ["New", "Contacted", "Qualified", "Proposal", "Won"];
@@ -76,15 +78,18 @@ export function LeadsAdmin() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  function load() {
-    setLoading(true);
+  function load(opts: { silent?: boolean } = {}) {
+    if (!opts.silent) setLoading(true);
     api.get("/api/admin/leads").then(async (res) => {
       setLeads(res.ok ? await res.json() : []);
-      setLoading(false);
+      if (!opts.silent) setLoading(false);
     });
   }
 
-  useEffect(load, []);
+  useEffect(() => load(), []);
+  // Quietly refresh in the background so new inbound messages/reactions
+  // show up as an unread badge without ever needing a manual reload.
+  usePolling(() => load({ silent: true }), 15000);
 
   const filtered = useMemo(
     () => leads.filter((l) => stageFilter === "all" || l.stage === stageFilter),
@@ -345,10 +350,13 @@ export function LeadsAdmin() {
                               <button
                                 onClick={() => setMessagingLead(l)}
                                 disabled={!l.email && !l.phone}
-                                className="text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="relative text-gray-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 aria-label={`Message ${l.name}`}
                               >
                                 <MessageSquare size={16} />
+                                {l.has_unread && (
+                                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_2px_rgba(10,10,16,0.9)]" />
+                                )}
                               </button>
                               <button onClick={() => openEdit(l)} className="text-gray-400 hover:text-white transition-colors" aria-label={`Edit ${l.name}`}>
                                 <Pencil size={16} />
@@ -448,10 +456,13 @@ function LeadCard({
           <button
             onClick={onMessage}
             disabled={!lead.email && !lead.phone}
-            className="p-1 text-gray-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="relative p-1 text-gray-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label={`Message ${lead.name}`}
           >
             <MessageSquare size={13} />
+            {lead.has_unread && (
+              <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_2px_rgba(10,10,16,0.9)]" />
+            )}
           </button>
           <button onClick={onEdit} className="p-1 text-gray-500 hover:text-white transition-colors" aria-label={`Edit ${lead.name}`}>
             <Pencil size={13} />
