@@ -337,7 +337,7 @@ export function AdminPortal() {
                 {topLeads.map((lead: any) => (
                   <Link
                     key={lead.id}
-                    to="/admin/leads"
+                    to={`/admin/leads?lead=${lead.id}&action=edit`}
                     className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
                     <span

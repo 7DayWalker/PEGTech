@@ -632,7 +632,7 @@ function LeadCard({
           </button>
         ) : lead.converted_client_id ? (
           <Link
-            to="/admin/clients"
+            to={`/admin/clients?client=${lead.converted_client_id}&action=edit`}
             className="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 hover:bg-emerald-500/25 transition-colors"
             title="Won — client created. View in Clients."
           >
